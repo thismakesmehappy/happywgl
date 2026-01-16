@@ -1,0 +1,88 @@
+{
+  "name": "@webgl-lib/core",
+  "version": "0.1.0",
+  "description": "A modular TypeScript WebGL graphics library built from scratch",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./math": {
+      "import": "./dist/math/index.js",
+      "types": "./dist/math/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./resources": {
+      "import": "./dist/resources/index.js",
+      "types": "./dist/resources/index.d.ts"
+    },
+    "./geometry": {
+      "import": "./dist/geometry/index.js",
+      "types": "./dist/geometry/index.d.ts"
+    },
+    "./scene": {
+      "import": "./dist/scene/index.js",
+      "types": "./dist/scene/index.d.ts"
+    },
+    "./camera": {
+      "import": "./dist/camera/index.js",
+      "types": "./dist/camera/index.d.ts"
+    },
+    "./lights": {
+      "import": "./dist/lights/index.js",
+      "types": "./dist/lights/index.d.ts"
+    },
+    "./materials": {
+      "import": "./dist/materials/index.js",
+      "types": "./dist/materials/index.d.ts"
+    },
+    "./animation": {
+      "import": "./dist/animation/index.js",
+      "types": "./dist/animation/index.d.ts"
+    },
+    "./renderer": {
+      "import": "./dist/renderer/index.js",
+      "types": "./dist/renderer/index.d.ts"
+    },
+    "./loaders": {
+      "import": "./dist/loaders/index.js",
+      "types": "./dist/loaders/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "keywords": [
+    "webgl",
+    "graphics",
+    "3d",
+    "typescript",
+    "rendering"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8",
+    "vitest": "^1.0.4"
+  }
+}
