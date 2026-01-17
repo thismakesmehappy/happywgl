@@ -31,10 +31,16 @@
  */
 export abstract class Vector {
   /**
-   * Vector components stored as an array
+   * Vector components stored as Float32Array for WebGL compatibility and performance
    * Protected so subclasses can access it
+   * 
+   * Float32Array provides:
+   * - Direct compatibility with WebGL buffer uploads
+   * - Better performance than regular arrays
+   * - Memory efficiency (32-bit floats)
+   * - Consistency with Matrix4 implementation
    */
-  protected _components: number[];
+  protected _components: Float32Array;
 
   /**
    * Creates a new Vector
@@ -48,14 +54,33 @@ export abstract class Vector {
    * const v4 = new Vector4(1, 2, 3, 4); // (1, 2, 3, 4)
    */
   constructor(...components: number[]) {
-    this._components = [...components];
+    this._components = new Float32Array(components);
   }
 
   get size(): number {
     return this._components.length;
   }
 
+  /**
+   * Gets the components as a regular array
+   * For compatibility with code that expects number[]
+   */
   get components(): number[] {
+    return Array.from(this._components);
+  }
+
+  /**
+   * Gets the components as Float32Array
+   * This is the format expected by WebGL buffer uploads
+   * Similar to Matrix4.elements
+   * 
+   * @returns Float32Array of vector components
+   * 
+   * @example
+   * const v = new Vector3(1, 2, 3);
+   * gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, v.elements);
+   */
+  get elements(): Float32Array {
     return this._components;
   }
 
@@ -91,11 +116,9 @@ export abstract class Vector {
   add(v: Vector): this {
     this._validateSameSize(this, v);
 
-    const components = this._components.map(
-      (component, index) => 
-        component + v._components[index]!
-    );
-    this._components = components;
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = this._components[i]! + v._components[i]!;
+    }
     return this;
   }
 
@@ -118,10 +141,10 @@ export abstract class Vector {
   static add<T extends Vector>(a: T, b: T): T {
     a._validateSameSize(a, b);
 
-    const components = a._components.map(
-      (component, index) => 
-        component + b._components[index]!
-    );
+    const components = new Float32Array(a._components.length);
+    for (let i = 0; i < a._components.length; i++) {
+      components[i] = a._components[i]! + b._components[i]!;
+    }
 
     // Return new instance of the same type as 'a'
     return new (a.constructor as new (...args: number[]) => T)(...components);
@@ -189,11 +212,9 @@ export abstract class Vector {
   subtract(v: Vector): this {
     this._validateSameSize(this, v);
 
-    const components = this._components.map(
-      (component, index) => 
-        component - v._components[index]!
-    );
-    this._components = components;
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = this._components[i]! - v._components[i]!;
+    }
     return this;
   }
 
@@ -216,10 +237,10 @@ export abstract class Vector {
   static subtract<T extends Vector>(a: T, b: T): T {
     a._validateSameSize(a, b);
 
-    const components = a._components.map(
-      (component, index) => 
-        component - b._components[index]!
-    );
+    const components = new Float32Array(a._components.length);
+    for (let i = 0; i < a._components.length; i++) {
+      components[i] = a._components[i]! - b._components[i]!;
+    }
 
     // Return new instance of the same type as 'a'
     return new (a.constructor as new (...args: number[]) => T)(...components);
@@ -237,9 +258,9 @@ export abstract class Vector {
    * v.multiplyScalar(2);  // v is now (2, 4, 6)
    */
   multiplyScalar(scalar: number): this {
-    this._components = this._components.map(
-      (component) => component * scalar
-    );
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = this._components[i]! * scalar;
+    }
     return this;
   }
 
@@ -256,9 +277,10 @@ export abstract class Vector {
    * const v2 = Vector3.multiplyScalar(v1, 2);  // Returns Vector3, v2 is (2, 4, 6), v1 unchanged
    */
   static multiplyScalar<T extends Vector>(v: T, scalar: number): T {
-    const components = v._components.map(
-      (component) => component * scalar
-    );
+    const components = new Float32Array(v._components.length);
+    for (let i = 0; i < v._components.length; i++) {
+      components[i] = v._components[i]! * scalar;
+    }
     // Return new instance of the same type as 'v'
     return new (v.constructor as new (...args: number[]) => T)(...components);
   }
@@ -340,7 +362,8 @@ export abstract class Vector {
     const len = v.length();
     if (len === 0) {
       // Cannot normalize zero vector - return zero vector of same type
-      return new (v.constructor as new (...args: number[]) => T)(...Array(v.size).fill(0));
+      const zeroComponents = new Float32Array(v.size);
+      return new (v.constructor as new (...args: number[]) => T)(...zeroComponents);
     }
     return Vector.divideScalar(v, len);
   }
@@ -376,7 +399,7 @@ export abstract class Vector {
    */
   copy(v: Vector): this {
     this._validateSameSize(this, v);
-    this._components = v._components.slice();
+    this._components.set(v._components);
     return this;
   }
 
