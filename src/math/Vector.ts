@@ -369,6 +369,72 @@ export abstract class Vector {
   }
 
   /**
+   * Linearly interpolates this vector towards another vector (MUTATING)
+   * Interpolates between this vector and v by parameter t.
+   * 
+   * Formula: this = (1 - t) * this + t * v
+   * When t = 0, result equals this vector
+   * When t = 1, result equals v
+   * When t = 0.5, result is halfway between this and v
+   * 
+   * Requires vectors of the same size.
+   * 
+   * @param v - Target vector to interpolate towards (must be same size)
+   * @param t - Interpolation parameter, typically in [0, 1]
+   * @returns This vector (for chaining)
+   * @throws Error if vectors are different sizes
+   * 
+   * @example
+   * const v1 = new Vector3(0, 0, 0);
+   * const v2 = new Vector3(10, 20, 30);
+   * v1.lerp(v2, 0.5);  // v1 is now (5, 10, 15)
+   */
+  lerp(v: Vector, t: number): this {
+    this._validateSameSize(this, v);
+
+    const oneMinusT = 1 - t;
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = oneMinusT * this._components[i]! + t * v._components[i]!;
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Linearly interpolates between two vectors and returns a new vector
+   * Similar to GLSL: vec c = mix(a, b, t);
+   * 
+   * Formula: result = (1 - t) * a + t * b
+   * When t = 0, result equals a
+   * When t = 1, result equals b
+   * When t = 0.5, result is halfway between a and b
+   * 
+   * Requires vectors of the same size. Returns a new vector of the same type.
+   * 
+   * @param a - First vector (when t = 0)
+   * @param b - Second vector (when t = 1, must be same type and size as a)
+   * @param t - Interpolation parameter, typically in [0, 1]
+   * @returns New interpolated vector (same type as a)
+   * @throws Error if vectors are different sizes
+   * 
+   * @example
+   * const v1 = new Vector3(0, 0, 0);
+   * const v2 = new Vector3(10, 20, 30);
+   * const v3 = Vector3.lerp(v1, v2, 0.5);  // Returns Vector3, v3 is (5, 10, 15), v1 and v2 unchanged
+   */
+  static lerp<T extends Vector>(a: T, b: T, t: number): T {
+    a._validateSameSize(a, b);
+
+    const oneMinusT = 1 - t;
+    const components = new Float32Array(a._components.length);
+    for (let i = 0; i < a._components.length; i++) {
+      components[i] = oneMinusT * a._components[i]! + t * b._components[i]!;
+    }
+
+    // Return new instance of the same type as 'a'
+    return new (a.constructor as new (...args: number[]) => T)(...components);
+  }
+
+  /**
    * Creates a new vector with the same values as this vector
    * Non-mutating - returns a new instance of the same type.
    * 

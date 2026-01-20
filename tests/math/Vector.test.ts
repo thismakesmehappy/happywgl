@@ -443,7 +443,163 @@ describe('Vector (Base Class)', () => {
         const v2 = new Vector3(4, 5, 6);
         expect(() => v1.add(v2)).toThrow('Vectors must have the same size');
       });
-      
-      
+  });
+
+  describe('lerp()', () => {
+    describe('Instance Method', () => {
+      it('should interpolate to start vector when t = 0', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const original = v1.clone();
+        v1.lerp(v2, 0);
+        expect(v1.equals(original)).toBe(true);
+      });
+
+      it('should interpolate to end vector when t = 1', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        v1.lerp(v2, 1);
+        expect(v1.equals(v2)).toBe(true);
+      });
+
+      it('should interpolate halfway when t = 0.5', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        v1.lerp(v2, 0.5);
+        expect(v1.x).toBe(5);
+        expect(v1.y).toBe(10);
+        expect(v1.z).toBe(15);
+      });
+
+      it('should work with Vector2', () => {
+        const v1 = new Vector2(0, 0);
+        const v2 = new Vector2(10, 20);
+        v1.lerp(v2, 0.5);
+        expect(v1.x).toBe(5);
+        expect(v1.y).toBe(10);
+      });
+
+      it('should work with Vector4', () => {
+        const v1 = new Vector4(0, 0, 0, 0);
+        const v2 = new Vector4(10, 20, 30, 40);
+        v1.lerp(v2, 0.25);
+        expect(v1.x).toBeCloseTo(2.5);
+        expect(v1.y).toBeCloseTo(5);
+        expect(v1.z).toBeCloseTo(7.5);
+        expect(v1.w).toBeCloseTo(10);
+      });
+
+      it('should allow t outside [0, 1] range (extrapolation)', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        v1.lerp(v2, 2);
+        // When t = 2: result = (1-2)*v1 + 2*v2 = -v1 + 2*v2 = 2*v2 = (20, 40, 60)
+        expect(v1.x).toBe(20);
+        expect(v1.y).toBe(40);
+        expect(v1.z).toBe(60);
+      });
+
+      it('should return this for chaining', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const result = v1.lerp(v2, 0.5);
+        expect(result).toBe(v1);
+      });
+
+      it('should throw error for different-sized vectors', () => {
+        const v1 = new Vector2(1, 2);
+        const v2 = new Vector3(4, 5, 6);
+        expect(() => v1.lerp(v2, 0.5)).toThrow('Vectors must have the same size');
+      });
+    });
+
+    describe('Static Method', () => {
+      it('should interpolate to start vector when t = 0', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const result = Vector.lerp(v1, v2, 0);
+        expect(result.equals(v1)).toBe(true);
+        expect(result).not.toBe(v1);
+      });
+
+      it('should interpolate to end vector when t = 1', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const result = Vector.lerp(v1, v2, 1);
+        expect(result.equals(v2)).toBe(true);
+        expect(result).not.toBe(v2);
+      });
+
+      it('should interpolate halfway when t = 0.5', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const result = Vector.lerp(v1, v2, 0.5);
+        expect(result.x).toBe(5);
+        expect(result.y).toBe(10);
+        expect(result.z).toBe(15);
+        expect(v1.x).toBe(0);
+        expect(v2.x).toBe(10);
+      });
+
+      it('should preserve type (Vector2)', () => {
+        const v1 = new Vector2(0, 0);
+        const v2 = new Vector2(10, 20);
+        const result = Vector.lerp(v1, v2, 0.5);
+        expect(result).toBeInstanceOf(Vector2);
+        expect(result.x).toBe(5);
+        expect(result.y).toBe(10);
+      });
+
+      it('should preserve type (Vector3)', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const result = Vector.lerp(v1, v2, 0.5);
+        expect(result).toBeInstanceOf(Vector3);
+      });
+
+      it('should preserve type (Vector4)', () => {
+        const v1 = new Vector4(0, 0, 0, 0);
+        const v2 = new Vector4(10, 20, 30, 40);
+        const result = Vector.lerp(v1, v2, 0.25);
+        expect(result).toBeInstanceOf(Vector4);
+        expect(result.x).toBeCloseTo(2.5);
+      });
+
+      it('should allow t outside [0, 1] range', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const result = Vector.lerp(v1, v2, 2);
+        // When t = 2: result = (1-2)*v1 + 2*v2 = -v1 + 2*v2 = 2*v2 = (20, 40, 60)
+        expect(result.x).toBe(20);
+        expect(result.y).toBe(40);
+        expect(result.z).toBe(60);
+      });
+
+      it('should not mutate input vectors', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const original1 = v1.clone();
+        const original2 = v2.clone();
+        Vector.lerp(v1, v2, 0.5);
+        expect(v1.equals(original1)).toBe(true);
+        expect(v2.equals(original2)).toBe(true);
+      });
+
+      it('should throw error for different-sized vectors', () => {
+        const v1 = new Vector2(1, 2);
+        const v2 = new Vector3(4, 5, 6);
+        expect(() => Vector.lerp(v1, v2, 0.5)).toThrow('Vectors must have the same size');
+      });
+
+      it('should handle negative t values', () => {
+        const v1 = new Vector3(0, 0, 0);
+        const v2 = new Vector3(10, 20, 30);
+        const result = Vector.lerp(v1, v2, -1);
+        // When t = -1: result = (1-(-1))*v1 + (-1)*v2 = 2*v1 - v2 = -v2 = (-10, -20, -30)
+        expect(result.x).toBe(-10);
+        expect(result.y).toBe(-20);
+        expect(result.z).toBe(-30);
+      });
+    });
   });
 });
