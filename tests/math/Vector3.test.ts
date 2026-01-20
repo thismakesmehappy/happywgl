@@ -52,9 +52,9 @@ describe('Vector3', () => {
         const y = 0.5;
         const z = 0.25;
         const v = new Vector3();
-        v.x = x;
-        v.y = y;
-        v.z = z;
+        v.r = x;
+        v.g = y;
+        v.b = z;
         expect(v.r).toBe(x);
         expect(v.g).toBe(y);
         expect(v.b).toBe(z);
@@ -65,9 +65,9 @@ describe('Vector3', () => {
         const y = 0.5;
         const z = 0.25;
         const v = new Vector3();
-        v.x = x;
-        v.y = y;
-        v.z = z;
+        v.s = x;
+        v.t = y;
+        v.p = z;
         expect(v.s).toBe(x);
         expect(v.t).toBe(y);
         expect(v.p).toBe(z);

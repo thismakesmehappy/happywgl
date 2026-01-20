@@ -41,22 +41,22 @@ describe('Vector2', () => {
         expect(v.y).toBe(y);
     });
 
-    it('should access components via r, g, b (color)', () => {
+    it('should access components via r, g (color)', () => {
         const x = 1.0;
         const y = 0.5;
         const v = new Vector2();
-        v.x = x;
-        v.y = y;
+        v.r = x;
+        v.g = y;
         expect(v.r).toBe(x);
         expect(v.g).toBe(y);
     });
 
-    it('should access components via s, t, p (texture)', () => {
+    it('should access components via s, t (texture)', () => {
         const x = 1.0;
         const y = 0.5;
         const v = new Vector2();
-        v.x = x;
-        v.y = y;
+        v.s = x;
+        v.t = y;
         expect(v.s).toBe(x);
         expect(v.t).toBe(y);
     });
