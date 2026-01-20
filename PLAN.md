@@ -30,6 +30,13 @@ This document outlines the complete plan for building a modular TypeScript WebGL
 - **Vitest** - Testing framework (Vite-native)
 - **GLSL** - Shader language (embedded as template strings initially)
 
+### Output & Node.js Dependencies (Phase 9+)
+- **gl** or **headless-gl** - WebGL context in Node.js
+- **node-glfw** or **glfw** - Window management for Node.js
+- **sharp** or **canvas** - Image encoding (PNG, JPEG)
+- **fluent-ffmpeg** - Video encoding (wrapper around ffmpeg)
+- **ffmpeg** - System dependency for video encoding
+
 ### Library Name
 **Decision:** Library name is **deferred** - we'll use a placeholder in code examples (e.g., `@webgl-lib/core` or `mygfx`) and decide the final name during Phase 8 (Packaging). This allows flexibility and doesn't lock us into a name early. All import examples in documentation use placeholders that can be easily find-replaced when the final name is chosen.
 
@@ -109,6 +116,21 @@ src/
 ├── renderer/          # Rendering implementations
 │   ├── WebGLRenderer.ts # Main WebGL renderer
 │   └── index.ts
+├── output/            # Output targets and formats
+│   ├── OutputTarget.ts      # Abstract base class for output targets
+│   ├── CanvasOutput.ts       # Browser canvas output
+│   ├── NodeWindowOutput.ts   # Node.js window output
+│   ├── ImageOutput.ts        # Image export (PNG, JPEG)
+│   ├── VideoOutput.ts        # Video export (MP4, WebM)
+│   ├── FrameCapture.ts      # Frame-by-frame capture utilities
+│   └── index.ts
+├── interactivity/     # Input handling (optional module)
+│   ├── InputManager.ts       # Main input manager
+│   ├── MouseHandler.ts       # Mouse event handling
+│   ├── KeyboardHandler.ts    # Keyboard event handling
+│   ├── VideoCaptureHandler.ts # WebRTC video capture
+│   ├── EventTypes.ts         # Type definitions for events
+│   └── index.ts
 ├── loaders/           # Asset loading
 │   ├── OBJLoader.ts
 │   ├── GLTFLoader.ts
@@ -128,6 +150,7 @@ src/
 
 **Deliverables:**
 - Canvas initialization and WebGL 2 context setup
+- `OutputTarget` abstraction for output targets (foundation for multi-platform support)
 - Basic math library (Vector3, Matrix4, Quaternion)
 - Buffer management (VBO, IBO)
 - Shader compilation and program linking
@@ -135,6 +158,7 @@ src/
 - Basic material (flat color)
 - Simple renderer that can draw a mesh
 - Object3D base class with transform (position, rotation, scale)
+- Basic image export capability (browser: `toDataURL()`, Node.js: basic)
 - Demo: Rotating colored triangle/cube
 
 **API Example:**
@@ -259,6 +283,121 @@ renderer.render(scene);
 - Performance benchmarks
 - WebGL 1.0 fallback (optional)
 
+### Phase 9: Output Capabilities (Weeks 29-32)
+**Goal:** Support multiple output targets and formats
+
+**Deliverables:**
+- `OutputTarget` abstract base class (refine from Phase 1)
+- `CanvasOutput` (browser) - wraps existing Canvas
+- `NodeWindowOutput` (Node.js) - window rendering using gl + node-glfw
+- `ImageOutput` - PNG/JPEG export with `sharp` or `canvas`
+- `VideoOutput` - MP4/WebM export with two modes:
+  - Real-time interactive capture (capture frames during rendering loop)
+  - Frame-by-frame from animations (capture each animation frame)
+- `FrameCapture` - frame capture utilities
+- Integration with renderer (renderer accepts `OutputTarget` instead of `Canvas`)
+- Integration with animation system for frame-by-frame capture
+- Demo: Export animated scene to video file
+
+**Learning Focus:**
+- WebGL context creation in Node.js
+- Image encoding formats (PNG, JPEG)
+- Video encoding (H.264, VP9)
+- Frame buffer reading and conversion
+- Async file I/O in Node.js
+- Coordinate system transformations (flipping Y-axis for image export)
+
+**Dependencies:**
+- `gl` or `headless-gl` for Node.js WebGL
+- `node-glfw` or `glfw` for window management
+- `sharp` or `canvas` for image encoding
+- `fluent-ffmpeg` for video encoding
+- `ffmpeg` (system dependency)
+
+**API Example:**
+```typescript
+// Browser canvas output
+import { CanvasOutput, WebGLRenderer } from '@webgl-lib/renderer';
+const canvas = new CanvasOutput('#app');
+const renderer = new WebGLRenderer(canvas);
+
+// Node.js window output
+import { NodeWindowOutput } from '@webgl-lib/output';
+const window = new NodeWindowOutput(800, 600);
+const renderer = new WebGLRenderer(window);
+
+// Image export
+import { ImageOutput } from '@webgl-lib/output';
+const imageOutput = new ImageOutput(renderer);
+await imageOutput.exportPNG('screenshot.png');
+
+// Video export (real-time capture)
+import { VideoOutput } from '@webgl-lib/output';
+const videoOutput = new VideoOutput(renderer);
+videoOutput.startCapture('output.mp4', 60);
+function renderLoop() {
+  renderer.render(scene);
+  videoOutput.captureFrame();
+  requestAnimationFrame(renderLoop);
+}
+videoOutput.stopCapture();
+
+// Video export (frame-by-frame from animation)
+const videoOutput = new VideoOutput(renderer);
+videoOutput.startCapture('animation.mp4', 30);
+const clock = new Clock();
+clock.onFrame(() => {
+  animationMixer.update(clock.getDelta());
+  renderer.render(scene);
+  videoOutput.captureFrame();
+});
+videoOutput.stopCapture();
+```
+
+### Phase 10: Interactivity Module (Weeks 33-34)
+**Goal:** Optional input handling for interactive applications
+
+**Deliverables:**
+- `InputManager` - unified input management
+- `MouseHandler` - mouse events and position tracking
+  - Position, delta, buttons, wheel
+  - Events: `mousedown`, `mouseup`, `mousemove`, `wheel`
+- `KeyboardHandler` - keyboard state and events
+  - Key state tracking
+  - Events: `keydown`, `keyup`, `keypress`
+- `VideoCaptureHandler` - WebRTC video capture
+  - `getUserMedia()` integration
+  - Stream management
+- Event system for input callbacks
+- Integration examples
+- Demo: Interactive scene with mouse/keyboard controls
+
+**Learning Focus:**
+- Event-driven architecture
+- Input state management
+- WebRTC APIs (`getUserMedia`)
+- Coordinate system transformations (screen to world space)
+- Event delegation patterns
+
+**Note:** This is an optional module - users import only if needed:
+```typescript
+import { InputManager, MouseHandler, KeyboardHandler } from '@webgl-lib/interactivity';
+
+const inputManager = new InputManager(canvas);
+const mouse = new MouseHandler(inputManager);
+const keyboard = new KeyboardHandler(inputManager);
+
+mouse.on('mousemove', (event) => {
+  const worldPos = camera.unproject(event.position);
+});
+
+keyboard.on('keydown', (event) => {
+  if (event.key === 'Space') {
+    animationMixer.play();
+  }
+});
+```
+
 ## Implementation Strategy
 
 ### Development Principles
@@ -276,6 +415,9 @@ renderer.render(scene);
 - **Material System:** Shader-based with uniform management
 - **Geometry Separation:** Geometry and material are separate (allows reuse)
 - **Renderer Abstraction:** Renderer handles all WebGL state management
+- **Output Abstraction:** `OutputTarget` interface allows multiple output formats (browser canvas, Node.js window, image, video)
+- **Optional Modules:** Interactivity module is separate import - users only include what they need
+- **Multi-Platform:** Library works in both browser and Node.js environments
 
 ### File Structure
 
@@ -332,6 +474,8 @@ webgl/
 - **Geometry:** Vertex, face, normal, UV coordinates, tangent, bitangent
 - **Rendering:** Draw call, render pass, framebuffer, render target
 - **Animation:** Keyframe, interpolation, easing, animation clip, track
+- **Output:** Output target, frame capture, image export, video encoding
+- **Input:** Event handler, input state, coordinate transformation
 
 ## Learning Opportunities
 
@@ -400,3 +544,26 @@ webgl/
 
 **Last Updated:** [Current Date]
 **Status:** Planning Complete - Ready for Implementation
+
+## Output Capabilities & Interactivity
+
+The library supports multiple output targets and formats, enabling use in both browser and Node.js environments. Output capabilities are built on an abstraction layer (`OutputTarget`) that allows the renderer to work with different backends seamlessly.
+
+### Output Targets
+
+- **Browser Canvas** (`CanvasOutput`): Standard HTML5 canvas element
+- **Node.js Window** (`NodeWindowOutput`): Native window rendering using glfw
+- **Image Export** (`ImageOutput`): Export frames as PNG or JPEG
+- **Video Export** (`VideoOutput`): Export animations as MP4 or WebM with two capture modes:
+  - Real-time interactive capture (capture during rendering loop)
+  - Frame-by-frame from time-based animations
+
+### Interactivity Module
+
+An optional module (`@webgl-lib/interactivity`) provides input handling:
+- Mouse events and position tracking
+- Keyboard state and events
+- WebRTC video capture integration
+- Event-driven architecture for input callbacks
+
+See Phase 9 and Phase 10 for detailed implementation plans.
