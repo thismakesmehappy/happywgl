@@ -15,4 +15,4 @@ export * from './Matrix2.js';
 export * from './Matrix3.js';
 export * from './Matrix4.js';
 // TODO: Phase 1 - Implement remaining math primitives
-// export * from './Quaternion.js';
+export * from './Quaternion.js';
