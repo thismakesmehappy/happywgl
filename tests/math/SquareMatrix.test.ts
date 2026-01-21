@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Matrix } from '../../src/math/Matrix.js';
 import { Matrix4 } from '../../src/math/Matrix4.js';
 import { SquareMatrix } from '../../src/math/SquareMatrix.js';
 import { createSquareMatrix } from '../helpers/math/createSquareMatrix.js';
@@ -26,8 +27,10 @@ describe('SquareMatrix', () => {
 
   describe('Static Factory Methods', () => {
     describe('identity()', () => {
-      it('should create identity matrix', () => {
-        const m = SquareMatrix.identity.call(TestSquareMatrix4);
+      it('should create identity matrix using Matrix.zero() and makeIdentity()', () => {
+        // Since SquareMatrix doesn't have static identity(), use Matrix.zero() then makeIdentity()
+        const m = Matrix.zero.call(TestSquareMatrix4);
+        m.makeIdentity();
         expect(m.equals(new TestSquareMatrix4().makeIdentity())).toBe(true);
       });
     });

@@ -36,22 +36,6 @@ export abstract class SquareMatrix extends Matrix {
     return this.rows;
   }
 
-  static identity<T extends SquareMatrix>(
-    this: new (...args: any[]) => T
-  ): T {
-    const result = new this();
-    result.makeIdentity();
-    return result;
-  }
-
-  static zero<T extends SquareMatrix>(
-    this: new (...args: any[]) => T
-  ): T {
-    const result = new this();
-    result._elements.fill(0);
-    return result;
-  }
-
   /**
    * Transposes this matrix (MUTATING)
    * Swaps rows and columns

@@ -85,6 +85,17 @@ export class Matrix3 extends SquareMatrix {
     return this._setupProxy();
   }
 
+  /**
+   * Creates an identity matrix
+   * 
+   * @returns A new identity matrix
+   * 
+   * @example
+   * const m = Matrix3.identity();
+   */
+  static identity(): Matrix3 {
+    return new Matrix3();
+  }
 
   /**
    * Multiplies two matrices and stores the result in this matrix (MUTATING)
