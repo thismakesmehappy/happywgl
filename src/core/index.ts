@@ -1,11 +1,9 @@
 /**
  * Core rendering infrastructure
- * 
- * This module contains the fundamental WebGL context management
- * and canvas initialization.
+ *
+ * This module contains the fundamental WebGL context management,
+ * canvas initialization, renderer base class, and WebGL state management.
  */
 
-// Placeholder - will be implemented in Phase 1
-// export * from './Canvas.js';
-// export * from './GLContext.js';
-// export * from './Renderer.js';
+export * from './GLContext.js';
+export * from './WebGLState.js';
