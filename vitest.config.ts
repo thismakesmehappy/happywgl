@@ -3,15 +3,12 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom',
     coverage: {
       provider: 'v8',
       enabled: true,
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules', 'dist', '/tests/**/*.*'],
-      
     },
-    // For WebGL testing, we might need jsdom or happy-dom later
-    // environment: 'jsdom',
   },
 });
