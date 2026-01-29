@@ -8,7 +8,19 @@ This library provides a clean, modular API for WebGL graphics programming, simil
 
 ## Status
 
-🚧 **In Development** - Currently in planning phase. See [PLAN.md](./PLAN.md) for the complete development roadmap.
+🚧 **In Development** - Currently implementing Phase 1 (Core MVP). 
+
+**Completed:**
+- ✅ Math primitives (Vectors, Matrices, Quaternions) - 99%+ test coverage
+- ✅ Comprehensive test suite
+
+**Next Up:**
+- 🚧 Core rendering infrastructure (Canvas, GLContext, Renderer)
+- 🚧 GPU resources (Buffers, Shaders, Textures)
+- 🚧 Geometry system
+- 🚧 Basic rendering pipeline
+
+See [PLAN.md](./PLAN.md) for the complete development roadmap and [HANDOFF.md](./HANDOFF.md) for handoff documentation.
 
 ## Features (Planned)
 
@@ -54,6 +66,13 @@ webgl/
 ├── docs/             # Documentation
 └── dist/             # Build output
 ```
+
+## Documentation
+
+- **[PLAN.md](./PLAN.md)** - Complete development roadmap and architecture details
+- **[HANDOFF.md](./HANDOFF.md)** - Comprehensive handoff documentation for taking over the project
+- **[HANDOFF_PROMPT.md](./HANDOFF_PROMPT.md)** - Template prompts for effective handoff with AI assistants
+- **[TODO.md](./TODO.md)** - Quick-reference TODO list
 
 ## Development Plan
 

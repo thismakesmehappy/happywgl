@@ -1,5 +1,7 @@
 # WebGL Graphics Library - Development Plan & Process
 
+> **For Claude development sessions:** See **CLAUDE.md** for the development workflow, current status, and how to request features with proper review flow.
+
 ## Overview
 
 This document outlines the complete plan for building a modular TypeScript WebGL graphics library from scratch. The library will be similar to three.js but built from the ground up, focusing on learning and modularity.
@@ -451,13 +453,13 @@ webgl/
 1. **Inline Comments:** Extensive comments explaining graphics concepts, terminology, and "why" not just "what"
 
 2. **Concept Docs:** Create `docs/concepts/` directory with markdown files explaining:
-   - WebGL pipeline (vertex shader → fragment shader)
-   - Coordinate systems (model, view, world, screen space)
-   - Transform matrices and their composition
-   - Lighting models and calculations
-   - Texture mapping and UV coordinates
-   - Scene graph traversal
-   - Animation interpolation methods
+  - WebGL pipeline (vertex shader → fragment shader)
+  - Coordinate systems (model, view, world, screen space)
+  - Transform matrices and their composition
+  - Lighting models and calculations
+  - Texture mapping and UV coordinates
+  - Scene graph traversal
+  - Animation interpolation methods
 
 3. **Glossary:** Maintain a glossary of graphics terminology
 
@@ -508,22 +510,22 @@ webgl/
 ### Getting Started
 
 1. **Initialize Project**
-   - Set up Vite with TypeScript
-   - Configure strict TypeScript settings
-   - Set up project structure
-   - Initialize git repository
+  - Set up Vite with TypeScript
+  - Configure strict TypeScript settings
+  - Set up project structure
+  - Initialize git repository
 
 2. **Phase 1 Implementation**
-   - Start with math library (foundation)
-   - Implement WebGL context wrapper
-   - Build buffer and shader systems
-   - Create first working demo
+  - Start with math library (foundation)
+  - Implement WebGL context wrapper
+  - Build buffer and shader systems
+  - Create first working demo
 
 3. **Iterative Development**
-   - Implement features phase by phase
-   - Create demos for each phase
-   - Document as you go
-   - Test thoroughly
+  - Implement features phase by phase
+  - Create demos for each phase
+  - Document as you go
+  - Test thoroughly
 
 ### Best Practices
 
