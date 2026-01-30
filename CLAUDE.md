@@ -8,11 +8,21 @@
 
 ## Quick Navigation
 
-- **HANDOFF.md** - Complete project context, architecture, patterns, and current status
-- **PLAN.md** - Full 10-phase development roadmap with rationale
-- **TODO.md** - Quick reference checklist for Phase 1
-- **SETUP.md** - Initial project setup and configuration
-- **.claude/RESOURCE_ARCHITECTURE.md** - How Buffer, Shader, VertexArray, Texture, Geometry, and Material work together
+For different information, see:
+- **ARCHITECTURE.md** → Architecture decisions, layer structure, and design principles
+- **TODO.md** → Current tasks & cumulative status across all phases
+- **PLAN.md** → Complete 10-phase roadmap with rationale and learning focus
+- **HANDOFF.md** → Complete project context, patterns, and historical decisions
+- **SETUP.md** → Development environment setup (development-only documentation)
+- **docs/_SUPPORTING/** → Detailed architecture reference and research materials
+
+### About This File
+This file is your **development workflow guide** covering:
+- Current implementation status and what's pending
+- How to request features and approve/reject changes
+- Code quality standards and testing strategy
+- Common patterns and best practices
+- Feature implementation checklist
 
 ---
 

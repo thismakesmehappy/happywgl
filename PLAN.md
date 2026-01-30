@@ -150,6 +150,25 @@ src/
 ### Phase 1: Core MVP (Weeks 1-4)
 **Goal:** Get basic rendering working with minimal features
 
+**Architecture:** See `ARCHITECTURE.md` for complete design rationale and layer descriptions.
+
+**Layer Structure:**
+- **Layer 1:** GLContext, WebGLState, Canvas (low-level APIs)
+- **Layer 2:** Program, Buffer, VertexArray, Texture (GPU resources)
+- **Layer 2.5:** Shader (user-friendly wrapper, Phase 4+ utilities reserved)
+- **Layer 3:** Geometry, Material, BasicMaterial (high-level concepts)
+- **Layer 4:** Object3D, Scene, Mesh, WebGLRenderer (scene graph)
+
+**Program vs Shader:**
+- **Program** (Layer 2): Direct WebGL program wrapper
+  - Compilation and linking of shader source
+  - Location caching for uniforms and attributes
+  - For advanced users needing direct control
+- **Shader** (Layer 2.5): User-friendly wrapper around Program
+  - Phase 1: Delegates to Program
+  - Phase 4+: Adds utilities (load from file, validate, cache)
+  - Material takes Shader (not Program) for future-proof design
+
 **Deliverables:**
 - Canvas initialization and WebGL 2 context setup
 - `OutputTarget` abstraction for output targets (foundation for multi-platform support)

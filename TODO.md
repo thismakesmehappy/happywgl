@@ -1,174 +1,344 @@
-# TODO List - Quick Reference
+# WebGL Graphics Library - Cumulative TODO
 
-**Last Updated:** January 2026
+**Last Updated:** January 30, 2026
+**Status:** Phase 1 Implementation - 40% Complete
 
-This is a quick-reference TODO list. See `HANDOFF.md` for detailed context and `PLAN.md` for the complete roadmap.
+> **Note:** This is a cumulative TODO list tracking all phases. It evolves as we progress through development, allowing retroactive updates as learning occurs. See `ARCHITECTURE.md` for design rationale and `PLAN.md` for complete roadmap.
 
 ---
 
-## Phase 1: Core MVP (Current Phase)
+## Phase 1: Core MVP [ACTIVE]
 
-### Core Rendering Infrastructure
-- [ ] `src/core/Canvas.ts` - Canvas initialization & WebGL context management
-- [ ] `src/core/GLContext.ts` - WebGL wrapper with error handling
-- [ ] `src/core/Renderer.ts` - Base renderer interface
+### Layer 1: Low-Level APIs ✅ (95% Complete)
 
-### GPU Resources
-- [ ] `src/resources/Buffer.ts` - Vertex/Index buffer abstraction
-- [ ] `src/resources/Shader.ts` - Shader compilation & program management
-- [ ] `src/resources/VertexArray.ts` - VAO abstraction (WebGL 2)
-- [ ] `src/resources/Texture.ts` - Texture loading & management
+- [x] `src/core/GLContext.ts` - WebGL 2.0 wrapper with error handling (98.19% coverage)
+- [x] `src/core/WebGLState.ts` - Comprehensive state management (100% coverage)
+- [x] `src/core/Canvas.ts` - Canvas initialization & context management (100% coverage)
+- [x] `src/core/Renderer.ts` - Abstract base renderer interface (100% coverage)
 
-### Geometry System
-- [ ] `src/geometry/Geometry.ts` - Base geometry class
-- [ ] `src/geometry/BufferGeometry.ts` - Geometry with buffer data
-- [ ] Triangle geometry primitive
-- [ ] Quad geometry primitive
+**Status:** Production-quality foundation ready for Layer 2 resources
 
-### Material System
-- [ ] `src/materials/Material.ts` - Base material class
-- [ ] `src/materials/BasicMaterial.ts` - Flat color material
+### Layer 2: GPU Resources 🚧 (40% Complete)
 
-### Scene Graph
-- [ ] `src/scene/Object3D.ts` - Base class for all scene objects
-- [ ] `src/scene/Scene.ts` - Root scene container
-- [ ] `src/scene/Mesh.ts` - Renderable mesh object
+- [x] `src/resources/Buffer.ts` - Vertex/Index buffer abstraction (98.38% coverage)
+- [⏳] `src/resources/Program.ts` - Shader compilation and linking (98.34% coverage, **Ready for Approval**)
+- [ ] `src/resources/VertexArray.ts` - VAO abstraction (WebGL 2) [NEXT - depends on Program ✅]
+- [ ] `src/resources/Texture.ts` - Texture resource wrapper [depends on Program ✅]
 
-### Renderer Implementation
-- [ ] `src/renderer/WebGLRenderer.ts` - Main WebGL renderer
+**Status:** Buffer complete, Program ready for approval. VertexArray and Texture blocked until Program approved.
 
-### Basic Image Export
-- [ ] Browser: `canvas.toDataURL()` wrapper
-- [ ] Basic image export API
+### Layer 2.5: Shader Wrapper ⏳ (0% Complete)
+
+- [ ] `src/resources/Shader.ts` - User-facing wrapper around Program [BLOCKED: waiting for Program approval]
+  - Phase 1: Thin wrapper delegating to Program
+  - Phase 4+: Reserves space for utilities (load, validate, cache)
+
+**Status:** Specification complete, blocked until Program and VertexArray ready
+
+### Layer 3: High-Level Concepts ⏳ (0% Complete)
+
+- [ ] `src/geometry/Geometry.ts` - Base geometry class [BLOCKED: needs VertexArray + Shader]
+- [ ] `src/materials/Material.ts` - Material system using Design A [BLOCKED: needs Shader]
+  - Material = Shader + Uniforms (each material has own shader)
+  - Use Design A as documented in ARCHITECTURE.md
+- [ ] `src/materials/BasicMaterial.ts` - Default material with flat color [BLOCKED: needs Material]
+
+**Status:** Design finalized (Design A), specification complete, blocked on Layer 2.5
+
+### Layer 4: Scene Graph ⏳ (0% Complete)
+
+- [ ] `src/scene/Object3D.ts` - Base transform hierarchy [BLOCKED: needs Material]
+- [ ] `src/scene/Scene.ts` - Object container [BLOCKED: needs Material]
+- [ ] `src/scene/Mesh.ts` - Geometry + Material combination [BLOCKED: needs Material]
+- [ ] `src/renderer/WebGLRenderer.ts` - Main WebGL rendering orchestration [BLOCKED: needs Mesh]
+
+**Status:** Architecture designed, blocked on Layer 3
+
+### Output & Export
+
+- [ ] `src/output/OutputTarget.ts` - Output abstraction interface [PHASE 1: Light abstraction]
+- [ ] `src/output/CanvasOutput.ts` - Canvas implementation of OutputTarget [Phase 1 initial]
+- [ ] Browser image export - `canvas.toDataURL()` wrapper [Phase 1]
+
+**Status:** Specification ready, can be added with OutputTarget abstraction
 
 ### Demo
-- [ ] Rotating colored triangle/cube demo
+
+- [ ] Phase 1 Demo - Rotating colored cube with camera [BLOCKED: needs WebGLRenderer]
+
+**Status:** Specification ready, depends on complete rendering pipeline
 
 ---
 
-## Phase 2: Geometry & Primitives
+## Phase 2: Geometry & Primitives [NOT STARTED]
 
+**Prerequisites:** Complete Phase 1 rendering pipeline
+
+### Primitive Shapes
 - [ ] `src/geometry/primitives/Box.ts`
 - [ ] `src/geometry/primitives/Sphere.ts`
 - [ ] `src/geometry/primitives/Plane.ts`
 - [ ] `src/geometry/primitives/Cylinder.ts`
 - [ ] `src/geometry/primitives/Torus.ts`
+
+### Advanced Geometry
 - [ ] `src/geometry/curves/BezierCurve.ts`
 - [ ] `src/geometry/curves/CatmullRomCurve.ts`
 - [ ] `src/geometry/surfaces/Superellipsoid.ts`
 - [ ] `src/geometry/surfaces/RotationalSolid.ts`
-- [ ] `src/utils/Transform.ts` - Transform helpers
+
+### Transform Utilities
+- [ ] `src/utils/Transform.ts` - Transform helpers (translate, rotate, scale, shear)
+
+**Status:** Unblocked after Phase 1 complete
 
 ---
 
-## Phase 3: Scene Graph & Cameras
+## Phase 3: Scene Graph & Cameras [NOT STARTED]
 
+**Prerequisites:** Complete Phase 1 rendering pipeline
+
+### Camera System
 - [ ] `src/camera/Camera.ts` - Base camera class
-- [ ] `src/camera/PerspectiveCamera.ts`
-- [ ] `src/camera/OrthographicCamera.ts`
-- [ ] Camera controls (basic orbit controls)
-- [ ] Frustum culling (basic implementation)
+- [ ] `src/camera/PerspectiveCamera.ts` - Perspective camera implementation
+- [ ] `src/camera/OrthographicCamera.ts` - Orthographic camera implementation
+- [ ] Camera controls - Basic orbit controls
+- [ ] Frustum culling - Basic implementation
+
+**Status:** Architecture designed, unblocked after Phase 1 complete
 
 ---
 
-## Phase 4: Lighting & Materials
+## Phase 4: Lighting & Materials [NOT STARTED]
 
+**Prerequisites:** Phase 1 complete + Phase 3 cameras
+
+### Light System
 - [ ] `src/lights/Light.ts` - Base light class
-- [ ] `src/lights/AmbientLight.ts`
-- [ ] `src/lights/DirectionalLight.ts`
-- [ ] `src/lights/PointLight.ts`
-- [ ] `src/lights/SpotLight.ts`
-- [ ] `src/materials/LambertMaterial.ts`
-- [ ] `src/materials/PhongMaterial.ts`
-- [ ] `src/materials/MirrorMaterial.ts`
+- [ ] `src/lights/AmbientLight.ts` - Ambient lighting
+- [ ] `src/lights/DirectionalLight.ts` - Directional lighting
+- [ ] `src/lights/PointLight.ts` - Point light source
+- [ ] `src/lights/SpotLight.ts` - Spot light source
+
+### Material Variants
+- [ ] `src/materials/LambertMaterial.ts` - Lambert (diffuse) shading
+- [ ] `src/materials/PhongMaterial.ts` - Phong (specular) shading
+- [ ] `src/materials/MirrorMaterial.ts` - Reflective material
 - [ ] Basic shadow mapping (optional)
 
----
+### Shader Utilities (Phase 4+ Enhancement)
+- [ ] `Shader.load(ctx, url)` - Load shaders from files
+- [ ] `Shader.write(shader, path)` - Export shader source
+- [ ] `Shader.validate()` - Compile-time validation
+- [ ] `Shader.cache` - Caching layer for loaded shaders
 
-## Phase 5: Animation System
+**Note:** These enhancements added to Shader (Layer 2.5) without requiring Material refactoring
 
-- [ ] `src/animation/Clock.ts` - Time management
-- [ ] `src/animation/KeyframeTrack.ts` - Individual property tracks
-- [ ] `src/animation/AnimationClip.ts` - Keyframe animation clips
-- [ ] `src/animation/AnimationMixer.ts` - Animation mixer
-
----
-
-## Phase 6: Asset Loading
-
-- [ ] `src/loaders/OBJLoader.ts`
-- [ ] `src/loaders/GLTFLoader.ts`
+**Status:** Architecture designed, decision on lighting uniforms deferred to Phase 3 planning
 
 ---
 
-## Phase 7: Advanced Effects
+## Phase 5: Animation System [NOT STARTED]
 
+**Prerequisites:** Phase 1 complete + Phase 2 geometry
+
+### Animation Infrastructure
+- [ ] `src/animation/Clock.ts` - Time management and delta tracking
+- [ ] `src/animation/KeyframeTrack.ts` - Individual property animation tracks
+- [ ] `src/animation/AnimationClip.ts` - Named animation clip container
+- [ ] `src/animation/AnimationMixer.ts` - Animation mixer for managing multiple clips
+
+### Animation Features
+- [ ] Property interpolation (linear, ease-in-out, etc.)
+- [ ] Animation playback control (play, pause, stop, restart)
+- [ ] Multi-animation blending
+- [ ] Animation events
+
+**Status:** Architecture designed, unblocked after Phase 1 complete
+
+---
+
+## Phase 6: Asset Loading [NOT STARTED]
+
+**Prerequisites:** Phase 1-2 complete
+
+### File Format Loaders
+- [ ] `src/loaders/OBJLoader.ts` - OBJ format loader with material support
+- [ ] `src/loaders/GLTFLoader.ts` - glTF 2.0 loader (basic implementation)
+- [ ] Texture loading from image files
+- [ ] Resource management and cleanup for loaded assets
+
+**Status:** Unblocked after Phase 2 complete
+
+---
+
+## Phase 7: Advanced Effects [NOT STARTED]
+
+**Prerequisites:** Phase 1-4 complete
+
+### Rendering Techniques
 - [ ] Mirror/reflective surfaces (environment mapping)
-- [ ] Render-to-texture
-- [ ] Post-processing effects (basic)
-- [ ] Instanced rendering
-- [ ] Performance optimizations
+- [ ] Render-to-texture framebuffer operations
+- [ ] Post-processing effects (basic filters, bloom, etc.)
+- [ ] Instanced rendering (optimization)
+- [ ] Performance optimizations and profiling
+
+**Status:** Unblocked after Phase 4 complete
 
 ---
 
-## Phase 8: Polish & Packaging
+## Phase 8: Polish & Packaging [NOT STARTED]
 
-- [ ] Complete TypeScript definitions
-- [ ] Documentation (API docs, examples)
-- [ ] npm package setup
-- [ ] Tree-shaking support
-- [ ] Example projects
+**Prerequisites:** Phase 1-7 complete
+
+### Library Finalization
+- [ ] Complete TypeScript type definitions
+- [ ] API documentation generation (JSDoc + tools)
+- [ ] Example projects and tutorials
+- [ ] npm package setup and configuration
+- [ ] Tree-shaking support verification
 - [ ] Performance benchmarks
-- [ ] WebGL 1.0 fallback (optional)
+- [ ] WebGL 1.0 fallback support (optional)
+- [ ] Library name finalization and branding
+
+**Status:** Planning phase, unblocked after Phase 7 complete
 
 ---
 
-## Phase 9: Output Capabilities
+## Phase 9: Output Capabilities [NOT STARTED]
 
-- [ ] `src/output/OutputTarget.ts` - Abstract base class
+**Prerequisites:** Phase 1 foundation + OutputTarget abstraction
+
+### Output Target System
+- [ ] `src/output/OutputTarget.ts` - Abstract output interface
 - [ ] `src/output/CanvasOutput.ts` - Browser canvas output
-- [ ] `src/output/NodeWindowOutput.ts` - Node.js window output
-- [ ] `src/output/ImageOutput.ts` - Image export (PNG, JPEG)
-- [ ] `src/output/VideoOutput.ts` - Video export (MP4, WebM)
-- [ ] `src/output/FrameCapture.ts` - Frame-by-frame capture utilities
+- [ ] `src/output/NodeWindowOutput.ts` - Node.js window rendering
+- [ ] `src/output/ImageOutput.ts` - PNG/JPEG image export
+- [ ] `src/output/VideoOutput.ts` - MP4/WebM video export (real-time + frame-by-frame)
+- [ ] `src/output/FrameCapture.ts` - Frame capture utilities
+
+### Integration
+- [ ] WebGLRenderer accepts OutputTarget instead of Canvas
+- [ ] Animation system integration for frame-by-frame capture
+- [ ] Node.js dependencies (`gl`, `node-glfw`, `sharp`, `fluent-ffmpeg`)
+
+**Status:** Architecture designed, light OutputTarget abstraction added to Phase 1. Full multi-platform output deferred to Phase 9.
 
 ---
 
-## Phase 10: Interactivity Module
+## Phase 10: Interactivity Module [NOT STARTED]
 
-- [ ] `src/interactivity/InputManager.ts` - Main input manager
-- [ ] `src/interactivity/MouseHandler.ts` - Mouse event handling
-- [ ] `src/interactivity/KeyboardHandler.ts` - Keyboard event handling
+**Prerequisites:** Phase 1 complete, optional for other phases
+
+### Input System
+- [ ] `src/interactivity/InputManager.ts` - Unified input management
+- [ ] `src/interactivity/MouseHandler.ts` - Mouse events and tracking
+- [ ] `src/interactivity/KeyboardHandler.ts` - Keyboard state and events
 - [ ] `src/interactivity/VideoCaptureHandler.ts` - WebRTC video capture
-- [ ] `src/interactivity/EventTypes.ts` - Type definitions
+- [ ] `src/interactivity/EventTypes.ts` - Event type definitions
+
+### Features
+- [ ] Mouse position, delta, buttons, wheel tracking
+- [ ] Keyboard key state tracking and event system
+- [ ] Event delegation patterns
+- [ ] Coordinate system transformations (screen to world space)
+
+**Status:** Optional module, unblocked after Phase 1 complete
 
 ---
 
 ## Utilities & Helpers
 
-- [ ] `src/utils/Color.ts` - Color utilities
-- [ ] `src/utils/MathUtils.ts` - Scalar math functions (clamp, smoothstep, etc.)
+### Color & Math Utils
+- [ ] `src/utils/Color.ts` - Color utilities and conversions
+- [ ] `src/utils/MathUtils.ts` - Scalar math functions (clamp, lerp, smoothstep, etc.)
+
+**Status:** Phase 1, unblocked
 
 ---
 
 ## Testing & Quality
 
-- [ ] Add tests for all new modules (maintain 95%+ line coverage, 90%+ branch coverage)
-- [ ] Fix remaining uncovered lines in existing code (see HANDOFF.md)
-- [ ] Add integration tests for rendering pipeline
-- [ ] Performance benchmarks
+### Test Coverage
+- [x] Phase 0: Math library - 99.11% lines / 94.78% branch coverage ✅
+- [x] Phase 1: Layer 1 (GLContext, WebGLState, Canvas) - 99.05% coverage ✅
+- [⏳] Phase 1: Layer 2 (Buffer, Program) - Add tests for VertexArray, Texture
+- [ ] Phase 1-10: Add integration tests for rendering pipeline
+- [ ] Performance benchmarks for rendering operations
+
+**Target:** Maintain 95%+ line coverage / 90%+ branch coverage across all phases
 
 ---
 
 ## Documentation
 
-- [ ] API documentation (JSDoc)
-- [ ] Concept documentation (`docs/concepts/`)
-- [ ] Example projects (`examples/`)
-- [ ] Tutorial guides
+### Code Documentation
+- [x] JSDoc comments for all math classes ✅
+- [x] JSDoc comments for GLContext, WebGLState, Canvas, Renderer ✅
+- [ ] JSDoc comments for all GPU resource classes (Program, VertexArray, Texture, Shader)
+- [ ] JSDoc comments for geometry, material, and scene classes
+- [ ] Example blocks for complex methods
+
+### Project Documentation
+- [x] README.md - Project overview ✅
+- [x] PLAN.md - Complete 10-phase roadmap ✅
+- [x] ARCHITECTURE.md - Design rationale and layer structure ✅
+- [x] CLAUDE.md - Development workflow ✅
+- [ ] `docs/_SUPPORTING/` - Detailed reference materials
+- [ ] `docs/_ARCHIVE/` - Completed/obsolete documentation
+- [ ] `docs/_LOGS/` - Decision records and maintenance logs
+
+### Learning Materials
+- [ ] Concept guides (`docs/concepts/webgl-pipeline.md`, coordinate-systems, transforms, lighting, etc.)
+- [ ] Glossary of graphics terminology
+- [ ] Tutorial guides for key features
+- [ ] Visual learning examples (show normals, coordinate axes, etc.)
 
 ---
 
-**Note:** This is a condensed TODO list. For detailed information about each item, see:
-- `HANDOFF.md` - Comprehensive handoff documentation
-- `PLAN.md` - Complete development roadmap with rationale
+## Critical Path to Phase 1 Completion
+
+**Current Status:** Layer 1 complete (95%), Layer 2 partially complete (40%)
+
+**Blocking Items:**
+1. ✅ Program.ts - Awaiting approval
+2. VertexArray.ts - Blocked until Program approved
+3. Texture.ts - Blocked until Program approved
+4. Shader.ts - Blocked until VertexArray + Program ready
+5. Geometry.ts - Blocked until VertexArray + Shader ready
+6. Material.ts - Blocked until Shader ready
+7. Scene Graph - Blocked until Material ready
+8. WebGLRenderer - Blocked until Scene Graph ready
+
+**Next Steps (in order):**
+1. Approve Program.ts
+2. Implement VertexArray.ts
+3. Implement Texture.ts
+4. Implement Shader.ts
+5. Implement Geometry.ts
+6. Implement Material.ts
+7. Implement BasicMaterial.ts
+8. Implement Object3D, Scene, Mesh
+9. Implement WebGLRenderer
+10. Create Phase 1 demo
+
+**Estimated Total Phase 1 Remaining:** ~2000 lines of code
+
+---
+
+## Notes
+
+- **Design Decisions Approved:**
+  - Material = Shader + Uniforms (Design A) for clarity and flexibility
+  - Simple state management (Phase 1) with future enhancement capability
+  - OutputTarget abstraction included in Phase 1 (not deferred to Phase 9)
+  - Program wraps shader source strings (not Shader objects)
+
+- **Phase 1 40% Complete:**
+  - Layer 1: 95% done (4/4 components)
+  - Layer 2: 40% done (2/4 components, Program awaiting approval)
+  - Layer 2.5-4: Not yet started (blocked on Layer 2)
+
+- **For detailed architecture rationale:** See `ARCHITECTURE.md`
+- **For complete development plan:** See `PLAN.md`
+- **For development workflow:** See `CLAUDE.md`
