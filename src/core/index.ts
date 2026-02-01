@@ -6,4 +6,5 @@
  */
 
 export * from './GLContext.js';
+export * from './Canvas.js';
 export * from './WebGLState.js';

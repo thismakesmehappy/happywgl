@@ -201,6 +201,17 @@ renderer.render(scene);
 ### Phase 2: Geometry & Primitives (Weeks 5-8)
 **Goal:** Rich geometry generation capabilities for quick visual wins
 
+**Early Phase 2: Error Handling Infrastructure**
+Before diving into geometry, centralize error handling across the codebase:
+- Create `src/errors/ErrorCodes.ts` with centralized error code enum
+- Create `src/errors/AppError.ts` custom error class with error code + context
+- Create `src/errors/messages.ts` with i18n-ready error messages (single source of truth)
+- Refactor Phase 1 errors (Canvas, GLContext, Buffer, Program) to use centralized system
+- Eliminates duplicates (e.g., "Canvas element with ID not found" appears 3x currently)
+- Prepares codebase for future i18n support and better error tracking
+
+**Geometry Implementation:**
+
 **Deliverables:**
 - Primitive shapes: Box, Sphere, Plane, Cylinder, Torus
 - Bezier curves and surfaces

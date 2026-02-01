@@ -31,6 +31,7 @@
  */
 
 import { WebGLState } from './WebGLState.js';
+import type { Canvas } from './Canvas.js';
 
 export class GLContext {
   /**
@@ -152,7 +153,10 @@ export class GLContext {
   /**
    * Creates a new GLContext wrapper
    *
-   * @param canvas - HTML canvas element to create context on
+   * @param canvasOrElement - Canvas object, HTMLCanvasElement, or element ID string
+   *   - Canvas: Uses canvas.element internally
+   *   - HTMLCanvasElement: Uses directly
+   *   - string: Looks up element by ID in DOM
    * @param options - Context creation options (WebGLContextAttributes)
    *   Defaults are optimized for rendering:
    *   - `antialias: true` - Smooth edges on geometry
@@ -163,23 +167,61 @@ export class GLContext {
    *
    *   Override any defaults by passing them in options parameter
    *
-   * @throws Error if WebGL 2.0 is not supported or context creation fails
+   * @throws Error if WebGL 2.0 is not supported, context creation fails, or element not found
    *
    * @example
+   * // With Canvas object
+   * const { canvas, glContext } = Canvas.createWithGLContext({ width: 800, height: 600 });
+   *
+   * @example
+   * // With HTMLCanvasElement
    * const canvas = document.querySelector('canvas')!;
    * const glContext = new GLContext(canvas);
    *
    * @example
+   * // With element ID string
+   * const glContext = new GLContext('my-canvas');
+   *
+   * @example
    * // Override defaults for lower power consumption
-   * const glContext = new GLContext(canvas, {
+   * const glContext = new GLContext('my-canvas', {
    *   powerPreference: 'low-power',
    *   antialias: false,
    * });
    */
   constructor(
-    canvas: HTMLCanvasElement,
+    canvasOrElement: Canvas | HTMLCanvasElement | string,
     options: WebGLContextAttributes = {},
   ) {
+    // Extract canvas element from various input types
+    let canvas: HTMLCanvasElement;
+
+    if (canvasOrElement instanceof HTMLCanvasElement) {
+      // Direct HTMLCanvasElement
+      canvas = canvasOrElement;
+    } else if (typeof canvasOrElement === 'string') {
+      // Element ID string - look up in DOM
+      const element = document.getElementById(canvasOrElement);
+      if (!element) {
+        throw new Error(`Canvas element with ID "${canvasOrElement}" not found in the DOM.`);
+      }
+      if (!(element instanceof HTMLCanvasElement)) {
+        throw new Error(
+          `Element with ID "${canvasOrElement}" is not an HTMLCanvasElement.`,
+        );
+      }
+      canvas = element;
+    } else {
+      // Canvas object - extract .element property
+      const elem = (canvasOrElement as Canvas).element;
+      if (!(elem instanceof HTMLCanvasElement)) {
+        throw new Error(
+          'Canvas object must have an .element property that is an HTMLCanvasElement.',
+        );
+      }
+      canvas = elem;
+    }
+
     this._canvas = canvas;
 
     // Request WebGL 2.0 context with sensible defaults

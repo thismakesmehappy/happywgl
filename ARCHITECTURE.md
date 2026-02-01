@@ -190,6 +190,40 @@ ctx.gl.useProgram(program.webGLProgram);
 ctx.gl.drawElements(...);  // Direct WebGL control
 ```
 
+### 6. Canvas - Independent DOM Management
+
+**Design:** Canvas is independent of GLContext (no viewport sync coupling)
+
+**Why:** Canvas should work with any rendering context:
+- Canvas 2D API
+- WebGL / WebGPU
+- Third-party libraries
+- Server-side rendering
+
+**Key Methods:**
+- `setSize(width, height)` - Sets canvas CSS and drawing buffer size
+- `fillWindow()` - Responsive canvas that fills browser window
+- `stopFillWindow(revert?)` - Stop responsive mode, optionally revert size
+- Chainable DOM methods: `setId()`, `addClass()`, `removeClass()`, `appendTo()`
+
+**Important:** `fillWindow()` only resizes the canvas element, NOT the WebGL viewport. With WebGL, manually sync after resizing:
+
+```typescript
+canvas.fillWindow();
+glContext.setViewport(0, 0, canvas.width, canvas.height);
+
+// Or use Renderer (Phase 4) for automatic coordination:
+renderer.setSize(canvas.width, canvas.height);
+```
+
+**Rationale:**
+- ✅ Canvas stays rendering-context-agnostic
+- ✅ GLContext stays rendering-logic independent
+- ✅ Clear separation of concerns
+- ✅ Renderer (Phase 4) will handle high-level coordination
+
+This separation of concerns allows Canvas to be useful for any rendering approach, while GLContext focuses purely on WebGL state management.
+
 ---
 
 ## Phase 1 Implementation Strategy

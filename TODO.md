@@ -74,6 +74,34 @@
 
 **Prerequisites:** Complete Phase 1 rendering pipeline
 
+### Infrastructure & Error Handling
+
+- [ ] `src/errors/ErrorCodes.ts` - Centralized error code enum
+  - Canvas errors (CANVAS_001, CANVAS_002, CANVAS_003)
+  - GLContext errors (GLCTX_001, GLCTX_002, GLCTX_003)
+  - Resource errors (RES_001, RES_002)
+  - Geometry errors (GEO_001+)
+  - Material errors (MAT_001+)
+
+- [ ] `src/errors/AppError.ts` - Custom error class with code + context
+  - Extends Error with code: ErrorCode
+  - Supports optional context dict for debugging
+  - Message format: `[CODE] message`
+
+- [ ] `src/errors/messages.ts` - i18n-ready error messages
+  - Single source of truth for all error messages
+  - Template strings for dynamic content ({id}, {selector}, etc.)
+  - Ready for translation systems (Phase 7+)
+
+- [ ] Refactor Phase 1 errors to use centralized system
+  - Canvas.ts, GLContext.ts, Buffer.ts, Program.ts, etc.
+  - Eliminates duplicates (e.g., "Canvas element not found" x3)
+  - Improves consistency across codebase
+
+**Rationale:** With 30+ unique error messages and duplicates already appearing, centralizing error handling prevents inconsistency, enables better error tracking/logging, and prepares for future i18n support.
+
+**Status:** Infrastructure task, unblocked after Phase 1 complete
+
 ### Primitive Shapes
 - [ ] `src/geometry/primitives/Box.ts`
 - [ ] `src/geometry/primitives/Sphere.ts`

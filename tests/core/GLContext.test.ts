@@ -206,6 +206,71 @@ describe('GLContext', () => {
       expect(ctx.viewportHeight).toBe(400);
       expect(mockGL.clearColor).toHaveBeenCalledWith(0.2, 0.2, 0.2, 1.0);
     });
+
+    describe('constructor with multiple input types', () => {
+      it('accepts HTMLCanvasElement directly', () => {
+        const glContext = new GLContext(canvas);
+        expect(glContext.canvas).toBe(canvas);
+      });
+
+      it('accepts string canvas element ID', () => {
+        // Create a canvas with ID in DOM
+        const testCanvas = document.createElement('canvas');
+        testCanvas.id = 'test-canvas-id';
+        document.body.appendChild(testCanvas);
+        vi.spyOn(testCanvas, 'getContext').mockReturnValue(mockGL);
+
+        const glContext = new GLContext('test-canvas-id');
+        expect(glContext.canvas).toBe(testCanvas);
+
+        // Cleanup
+        document.body.removeChild(testCanvas);
+      });
+
+      it('throws error when canvas element ID not found', () => {
+        expect(() => new GLContext('non-existent-canvas-id')).toThrow(
+          /Canvas element with ID "non-existent-canvas-id" not found in the DOM/,
+        );
+      });
+
+      it('throws error when element with ID is not a canvas', () => {
+        const notCanvas = document.createElement('div');
+        notCanvas.id = 'not-a-canvas';
+        document.body.appendChild(notCanvas);
+
+        expect(() => new GLContext('not-a-canvas')).toThrow(
+          /Element with ID "not-a-canvas" is not an HTMLCanvasElement/,
+        );
+
+        // Cleanup
+        document.body.removeChild(notCanvas);
+      });
+
+      it('accepts Canvas wrapper object', () => {
+        // Create a mock Canvas object with .element property
+        const testCanvasElement = document.createElement('canvas');
+        testCanvasElement.width = 800;
+        testCanvasElement.height = 600;
+        vi.spyOn(testCanvasElement, 'getContext').mockReturnValue(mockGL);
+
+        const mockCanvasWrapper = {
+          element: testCanvasElement,
+        };
+
+        const glContext = new GLContext(mockCanvasWrapper as any);
+        expect(glContext.canvas).toBe(testCanvasElement);
+      });
+
+      it('throws error when Canvas object has invalid element property', () => {
+        const invalidCanvas = {
+          element: document.createElement('div'), // Not an HTMLCanvasElement
+        };
+
+        expect(() => new GLContext(invalidCanvas as any)).toThrow(
+          /Canvas object must have an .element property that is an HTMLCanvasElement/,
+        );
+      });
+    });
   });
 
   describe('fromElementId', () => {
