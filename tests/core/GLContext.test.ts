@@ -107,13 +107,26 @@ describe('GLContext', () => {
       createBuffer: vi.fn(() => ({ id: Math.random() } as WebGLBuffer)),
       bindBuffer: vi.fn(),
       bufferData: vi.fn(),
+      bufferSubData: vi.fn(),
       deleteBuffer: vi.fn(),
+      getBufferParameter: vi.fn(),
       createTexture: vi.fn(() => ({ id: Math.random() } as WebGLTexture)),
+      bindTexture: vi.fn(),
       deleteTexture: vi.fn(),
+      texParameteri: vi.fn(),
+      texParameterf: vi.fn(),
+      texImage2D: vi.fn(),
+      texSubImage2D: vi.fn(),
+      getTexParameter: vi.fn(),
       createVertexArray: vi.fn(() => ({
         id: Math.random(),
       } as WebGLVertexArrayObject)),
+      bindVertexArray: vi.fn(),
       deleteVertexArray: vi.fn(),
+      vertexAttribPointer: vi.fn(),
+      enableVertexAttribArray: vi.fn(),
+      disableVertexAttribArray: vi.fn(),
+      getVertexAttrib: vi.fn(),
     };
 
     // Mock canvas.getContext to return our mock GL context
@@ -790,36 +803,45 @@ describe('GLContext', () => {
       glContext = new GLContext(canvas);
     });
 
-    it('creates a buffer with data', () => {
-      const data = new Float32Array([1, 2, 3]);
-      const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!, data);
-      expect(buffer).toBeDefined();
-    });
-
-    it('creates a buffer without data', () => {
+    it('creates an empty buffer', () => {
       const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
       expect(buffer).toBeDefined();
     });
 
-    it('binds buffer and uploads data', () => {
+    it('does NOT bind or upload data in createBuffer', () => {
+      const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
+
+      // createBuffer should NOT call bindBuffer or bufferData
+      expect(mockGL.bindBuffer).not.toHaveBeenCalled();
+      expect(mockGL.bufferData).not.toHaveBeenCalled();
+    });
+
+    it('bufferData binds, uploads, and unbinds', () => {
+      const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
       const data = new Float32Array([1, 2, 3]);
-      glContext.createBuffer(mockGL.ARRAY_BUFFER!, data);
+      glContext.bufferData(mockGL.ARRAY_BUFFER!, buffer, data);
 
       expect(mockGL.bindBuffer).toHaveBeenCalledWith(
         mockGL.ARRAY_BUFFER,
-        expect.any(Object),
+        buffer,
       );
       expect(mockGL.bufferData).toHaveBeenCalledWith(
         mockGL.ARRAY_BUFFER,
         data,
         mockGL.STATIC_DRAW,
       );
+      // Verify unbind (second bindBuffer call with null)
+      expect(mockGL.bindBuffer).toHaveBeenCalledWith(
+        mockGL.ARRAY_BUFFER,
+        null,
+      );
     });
 
-    it('uses custom usage hint', () => {
+    it('uses custom usage hint with bufferData', () => {
+      const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
       const data = new Float32Array([1, 2, 3]);
       const DYNAMIC_DRAW = 0x88e8;
-      glContext.createBuffer(mockGL.ARRAY_BUFFER!, data, DYNAMIC_DRAW);
+      glContext.bufferData(mockGL.ARRAY_BUFFER!, buffer, data, DYNAMIC_DRAW);
 
       expect(mockGL.bufferData).toHaveBeenCalledWith(
         mockGL.ARRAY_BUFFER,
@@ -829,13 +851,11 @@ describe('GLContext', () => {
     });
 
     it('supports element array buffer', () => {
-      const data = new Uint16Array([0, 1, 2]);
-      glContext.createBuffer(mockGL.ELEMENT_ARRAY_BUFFER!, data);
+      const buffer = glContext.createBuffer(mockGL.ELEMENT_ARRAY_BUFFER!);
 
-      expect(mockGL.bindBuffer).toHaveBeenCalledWith(
-        mockGL.ELEMENT_ARRAY_BUFFER,
-        expect.any(Object),
-      );
+      expect(buffer).toBeDefined();
+      // createBuffer doesn't bind - binding is done separately via bindBuffer or bufferData
+      expect(mockGL.bindBuffer).not.toHaveBeenCalled();
     });
 
     it('throws error when buffer creation fails', () => {
@@ -1086,11 +1106,12 @@ describe('GLContext', () => {
       const vertexData = new Float32Array([-1, 1, 1, 1, 0, -1]);
       const indexData = new Uint16Array([0, 1, 2]);
 
-      const vertexBuffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!, vertexData);
-      const indexBuffer = glContext.createBuffer(
-        mockGL.ELEMENT_ARRAY_BUFFER!,
-        indexData,
-      );
+      const vertexBuffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
+      glContext.bufferData(mockGL.ARRAY_BUFFER!, vertexBuffer, vertexData);
+
+      const indexBuffer = glContext.createBuffer(mockGL.ELEMENT_ARRAY_BUFFER!);
+      glContext.bufferData(mockGL.ELEMENT_ARRAY_BUFFER!, indexBuffer, indexData);
+
       const program = glContext.createProgram('', '');
       const vao = glContext.createVertexArray();
 
@@ -1436,6 +1457,384 @@ describe('GLContext', () => {
         expect(typeof tracked.has).toBe('function');
         expect(typeof tracked.forEach).toBe('function');
         expect(tracked.size).toBe(1);
+      });
+    });
+  });
+
+  describe('texture methods', () => {
+    let glContext: GLContext;
+
+    beforeEach(() => {
+      glContext = new GLContext(canvas);
+      vi.clearAllMocks();
+      vi.spyOn(canvas, 'getContext').mockReturnValue(mockGL as WebGL2RenderingContext);
+    });
+
+    describe('bindTexture', () => {
+      it('activates texture unit and binds texture', () => {
+        const texture = glContext.createTexture();
+        glContext.bindTexture(mockGL.TEXTURE_2D!, texture, 1);
+
+        expect(mockGL.activeTexture).toHaveBeenCalledWith(mockGL.TEXTURE0! + 1);
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, texture);
+      });
+
+      it('uses texture unit 0 by default', () => {
+        const texture = glContext.createTexture();
+        glContext.bindTexture(mockGL.TEXTURE_2D!, texture);
+
+        expect(mockGL.activeTexture).toHaveBeenCalledWith(mockGL.TEXTURE0);
+      });
+
+      it('can bind null to unbind', () => {
+        glContext.bindTexture(mockGL.TEXTURE_2D!, null);
+
+        expect(mockGL.activeTexture).toHaveBeenCalled();
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, null);
+      });
+    });
+
+    describe('unbindTexture', () => {
+      it('activates texture unit and unbinds', () => {
+        glContext.unbindTexture(mockGL.TEXTURE_2D!, 2);
+
+        expect(mockGL.activeTexture).toHaveBeenCalledWith(mockGL.TEXTURE0! + 2);
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, null);
+      });
+
+      it('uses texture unit 0 by default', () => {
+        glContext.unbindTexture(mockGL.TEXTURE_2D!);
+
+        expect(mockGL.activeTexture).toHaveBeenCalledWith(mockGL.TEXTURE0);
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, null);
+      });
+    });
+
+    describe('texParameteri', () => {
+      it('binds, sets parameter, and unbinds', () => {
+        const texture = glContext.createTexture();
+        const LINEAR = 0x2601;
+        glContext.texParameteri(
+          mockGL.TEXTURE_2D!,
+          texture,
+          0x2801, // TEXTURE_MIN_FILTER
+          LINEAR,
+        );
+
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, texture);
+        expect(mockGL.texParameteri).toHaveBeenCalledWith(mockGL.TEXTURE_2D, 0x2801, LINEAR);
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, null);
+      });
+
+      it('handles different texture targets', () => {
+        const texture = glContext.createTexture();
+        const TEXTURE_CUBE_MAP = 0x8513;
+        glContext.texParameteri(TEXTURE_CUBE_MAP, texture, 0x2801, 0x2601);
+
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(TEXTURE_CUBE_MAP, texture);
+      });
+    });
+
+    describe('texParameterf', () => {
+      it('binds, sets float parameter, and unbinds', () => {
+        const texture = glContext.createTexture();
+        glContext.texParameterf(mockGL.TEXTURE_2D!, texture, 0x84ef, 0.5); // TEXTURE_LOD_BIAS
+
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, texture);
+        expect(mockGL.texParameterf).toHaveBeenCalledWith(mockGL.TEXTURE_2D, 0x84ef, 0.5);
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, null);
+      });
+    });
+
+    describe('texImage2D', () => {
+      it('binds, uploads image data, and unbinds', () => {
+        const texture = glContext.createTexture();
+        const imageData = new Uint8Array(256 * 256 * 4);
+        const RGBA = 0x1908;
+        const UNSIGNED_BYTE = 0x1401;
+
+        glContext.texImage2D(
+          mockGL.TEXTURE_2D!,
+          texture,
+          0,
+          RGBA,
+          256,
+          256,
+          0,
+          RGBA,
+          UNSIGNED_BYTE,
+          imageData,
+        );
+
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, texture);
+        expect(mockGL.texImage2D).toHaveBeenCalledWith(
+          mockGL.TEXTURE_2D,
+          0,
+          RGBA,
+          256,
+          256,
+          0,
+          RGBA,
+          UNSIGNED_BYTE,
+          imageData,
+        );
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, null);
+      });
+
+      it('handles null data (allocate without upload)', () => {
+        const texture = glContext.createTexture();
+        const RGBA = 0x1908;
+        const UNSIGNED_BYTE = 0x1401;
+
+        glContext.texImage2D(
+          mockGL.TEXTURE_2D!,
+          texture,
+          0,
+          RGBA,
+          256,
+          256,
+          0,
+          RGBA,
+          UNSIGNED_BYTE,
+        );
+
+        expect(mockGL.texImage2D).toHaveBeenCalledWith(
+          mockGL.TEXTURE_2D,
+          0,
+          RGBA,
+          256,
+          256,
+          0,
+          RGBA,
+          UNSIGNED_BYTE,
+          null,
+        );
+      });
+    });
+
+    describe('texSubImage2D', () => {
+      it('binds, updates partial texture, and unbinds', () => {
+        const texture = glContext.createTexture();
+        const imageData = new Uint8Array(128 * 128 * 4);
+        const RGBA = 0x1908;
+        const UNSIGNED_BYTE = 0x1401;
+
+        glContext.texSubImage2D(
+          mockGL.TEXTURE_2D!,
+          texture,
+          0,
+          64,
+          64,
+          128,
+          128,
+          RGBA,
+          UNSIGNED_BYTE,
+          imageData,
+        );
+
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, texture);
+        expect(mockGL.texSubImage2D).toHaveBeenCalledWith(
+          mockGL.TEXTURE_2D,
+          0,
+          64,
+          64,
+          128,
+          128,
+          RGBA,
+          UNSIGNED_BYTE,
+          imageData,
+        );
+        expect(mockGL.bindTexture).toHaveBeenCalledWith(mockGL.TEXTURE_2D, null);
+      });
+    });
+
+    describe('getTexParameter', () => {
+      it('queries texture parameters', () => {
+        const LINEAR = 0x2601;
+        mockGL.getTexParameter = vi.fn(() => LINEAR);
+
+        const result = glContext.getTexParameter(mockGL.TEXTURE_2D!, 0x2801); // TEXTURE_MIN_FILTER
+
+        expect(result).toBe(LINEAR);
+        expect(mockGL.getTexParameter).toHaveBeenCalledWith(mockGL.TEXTURE_2D, 0x2801);
+      });
+
+      it('returns null for unset parameters', () => {
+        mockGL.getTexParameter = vi.fn(() => null);
+
+        const result = glContext.getTexParameter(mockGL.TEXTURE_2D!, 0x2801);
+
+        expect(result).toBeNull();
+      });
+    });
+  });
+
+  describe('vertex array methods', () => {
+    let glContext: GLContext;
+
+    beforeEach(() => {
+      glContext = new GLContext(canvas);
+      vi.clearAllMocks();
+      vi.spyOn(canvas, 'getContext').mockReturnValue(mockGL as WebGL2RenderingContext);
+      mockGL.bindVertexArray = vi.fn();
+      mockGL.vertexAttribPointer = vi.fn();
+      mockGL.enableVertexAttribArray = vi.fn();
+      mockGL.disableVertexAttribArray = vi.fn();
+      mockGL.getVertexAttrib = vi.fn();
+    });
+
+    describe('bindVertexArray', () => {
+      it('binds vertex array object', () => {
+        const vao = glContext.createVertexArray();
+        glContext.bindVertexArray(vao);
+
+        expect(mockGL.bindVertexArray).toHaveBeenCalledWith(vao);
+      });
+
+      it('can bind null to unbind', () => {
+        glContext.bindVertexArray(null);
+
+        expect(mockGL.bindVertexArray).toHaveBeenCalledWith(null);
+      });
+    });
+
+    describe('unbindVertexArray', () => {
+      it('unbinds current vertex array', () => {
+        glContext.unbindVertexArray();
+
+        expect(mockGL.bindVertexArray).toHaveBeenCalledWith(null);
+      });
+    });
+
+    describe('vertexAttribPointer', () => {
+      it('defines vertex attribute layout', () => {
+        glContext.vertexAttribPointer(0, 3, mockGL.FLOAT!, false, 12, 0);
+
+        expect(mockGL.vertexAttribPointer).toHaveBeenCalledWith(0, 3, mockGL.FLOAT, false, 12, 0);
+      });
+
+      it('handles different data types and strides', () => {
+        glContext.vertexAttribPointer(1, 4, mockGL.UNSIGNED_BYTE!, true, 8, 4);
+
+        expect(mockGL.vertexAttribPointer).toHaveBeenCalledWith(
+          1,
+          4,
+          mockGL.UNSIGNED_BYTE,
+          true,
+          8,
+          4,
+        );
+      });
+
+      it('supports tight packing (stride = 0)', () => {
+        glContext.vertexAttribPointer(0, 2, mockGL.FLOAT!, false, 0, 0);
+
+        expect(mockGL.vertexAttribPointer).toHaveBeenCalledWith(0, 2, mockGL.FLOAT, false, 0, 0);
+      });
+    });
+
+    describe('enableVertexAttribArray', () => {
+      it('enables vertex attribute array', () => {
+        glContext.enableVertexAttribArray(0);
+
+        expect(mockGL.enableVertexAttribArray).toHaveBeenCalledWith(0);
+      });
+
+      it('can enable multiple attributes', () => {
+        glContext.enableVertexAttribArray(0);
+        glContext.enableVertexAttribArray(1);
+        glContext.enableVertexAttribArray(2);
+
+        expect(mockGL.enableVertexAttribArray).toHaveBeenCalledTimes(3);
+      });
+    });
+
+    describe('disableVertexAttribArray', () => {
+      it('disables vertex attribute array', () => {
+        glContext.disableVertexAttribArray(0);
+
+        expect(mockGL.disableVertexAttribArray).toHaveBeenCalledWith(0);
+      });
+
+      it('can disable multiple attributes', () => {
+        glContext.disableVertexAttribArray(0);
+        glContext.disableVertexAttribArray(1);
+
+        expect(mockGL.disableVertexAttribArray).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe('getVertexAttrib', () => {
+      it('queries vertex attribute value', () => {
+        mockGL.getVertexAttrib = vi.fn(() => true);
+
+        const result = glContext.getVertexAttrib(0, 0x8622); // VERTEX_ATTRIB_ARRAY_ENABLED
+
+        expect(result).toBe(true);
+        expect(mockGL.getVertexAttrib).toHaveBeenCalledWith(0, 0x8622);
+      });
+
+      it('returns null for unset attributes', () => {
+        mockGL.getVertexAttrib = vi.fn(() => null);
+
+        const result = glContext.getVertexAttrib(0, 0x8622);
+
+        expect(result).toBeNull();
+      });
+
+      it('queries different attribute parameters', () => {
+        mockGL.getVertexAttrib = vi.fn(() => 4);
+
+        const result = glContext.getVertexAttrib(0, 0x8623); // VERTEX_ATTRIB_ARRAY_SIZE
+
+        expect(result).toBe(4);
+        expect(mockGL.getVertexAttrib).toHaveBeenCalledWith(0, 0x8623);
+      });
+    });
+
+    describe('buffer binding methods', () => {
+      it('bindBuffer binds buffer to target', () => {
+        const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
+        glContext.bindBuffer(mockGL.ARRAY_BUFFER!, buffer);
+
+        expect(mockGL.bindBuffer).toHaveBeenCalledWith(mockGL.ARRAY_BUFFER, buffer);
+      });
+
+      it('unbindBuffer unbinds buffer from target', () => {
+        glContext.unbindBuffer(mockGL.ARRAY_BUFFER!);
+
+        expect(mockGL.bindBuffer).toHaveBeenCalledWith(mockGL.ARRAY_BUFFER, null);
+      });
+
+      it('getBufferParameter queries buffer', () => {
+        mockGL.getBufferParameter = vi.fn(() => 1024);
+
+        const size = glContext.getBufferParameter(mockGL.ARRAY_BUFFER!, 0x8764); // BUFFER_SIZE
+
+        expect(size).toBe(1024);
+        expect(mockGL.getBufferParameter).toHaveBeenCalledWith(mockGL.ARRAY_BUFFER, 0x8764);
+      });
+    });
+
+    describe('bufferSubData', () => {
+      it('binds, updates, and unbinds buffer', () => {
+        const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
+        const data = new Float32Array([1, 2, 3, 4]);
+
+        glContext.bufferSubData(mockGL.ARRAY_BUFFER!, buffer, 0, data);
+
+        expect(mockGL.bindBuffer).toHaveBeenCalledWith(mockGL.ARRAY_BUFFER, buffer);
+        expect(mockGL.bufferSubData).toHaveBeenCalledWith(mockGL.ARRAY_BUFFER, 0, data);
+        expect(mockGL.bindBuffer).toHaveBeenCalledWith(mockGL.ARRAY_BUFFER, null);
+      });
+
+      it('handles non-zero offset updates', () => {
+        const buffer = glContext.createBuffer(mockGL.ARRAY_BUFFER!);
+        const data = new Float32Array([5, 6]);
+
+        glContext.bufferSubData(mockGL.ARRAY_BUFFER!, buffer, 16, data);
+
+        expect(mockGL.bufferSubData).toHaveBeenCalledWith(mockGL.ARRAY_BUFFER, 16, data);
       });
     });
   });

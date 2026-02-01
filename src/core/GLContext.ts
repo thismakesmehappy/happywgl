@@ -600,32 +600,24 @@ export class GLContext {
   }
 
   /**
-   * Creates a WebGL buffer
+   * Creates an empty WebGL buffer
+   *
+   * Creates a new buffer object but does not allocate data or bind it.
+   * Use bufferData() to populate the buffer.
    *
    * @param target - Buffer target (e.g., ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER)
-   * @param data - Optional data to populate buffer with
-   * @param usage - WebGL usage hint (default: STATIC_DRAW)
-   * @returns The created WebGL buffer
+   * @returns The created WebGL buffer (unbound, no data)
    * @throws Error if buffer creation fails
    *
    * @example
-   * const buffer = glContext.createBuffer(glContext.gl.ARRAY_BUFFER, vertices);
+   * const buffer = glContext.createBuffer(glContext.gl.ARRAY_BUFFER);
+   * glContext.bufferData(glContext.gl.ARRAY_BUFFER, buffer, vertices, glContext.gl.STATIC_DRAW);
    */
-  createBuffer(
-    target: GLenum,
-    data?: ArrayBufferView,
-    usage: GLenum = this._gl.STATIC_DRAW,
-  ): WebGLBuffer {
+  createBuffer(target: GLenum): WebGLBuffer {
     const buffer = this._gl.createBuffer();
     if (!buffer) {
       throw new Error('Failed to create WebGL buffer');
     }
-
-    this._gl.bindBuffer(target, buffer);
-    if (data) {
-      this._gl.bufferData(target, data, usage);
-    }
-    this._gl.bindBuffer(target, null);
 
     this._buffers.add(buffer);
     this._checkError('createBuffer');
@@ -634,13 +626,111 @@ export class GLContext {
   }
 
   /**
+   * Allocates and populates a buffer with data
+   *
+   * Binds the buffer, uploads data via bufferData(), and unbinds.
+   * Convenience method for the common pattern of creating and filling in one operation.
+   *
+   * @param target - Buffer target (e.g., ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER)
+   * @param buffer - The buffer to populate
+   * @param data - Data to upload (TypedArray or ArrayBuffer)
+   * @param usage - WebGL usage hint (default: STATIC_DRAW)
+   * @throws Error if WebGL error occurs
+   *
+   * @example
+   * const buffer = glContext.createBuffer(glContext.gl.ARRAY_BUFFER);
+   * glContext.bufferData(glContext.gl.ARRAY_BUFFER, buffer, vertices, glContext.gl.STATIC_DRAW);
+   */
+  bufferData(
+    target: GLenum,
+    buffer: WebGLBuffer,
+    data: ArrayBufferView,
+    usage: GLenum = this._gl.STATIC_DRAW,
+  ): void {
+    this._gl.bindBuffer(target, buffer);
+    this._gl.bufferData(target, data, usage);
+    this._gl.bindBuffer(target, null);
+    this._checkError('bufferData');
+  }
+
+  /**
+   * Update part of a buffer with new data
+   *
+   * Binds the buffer, uploads partial data via bufferSubData(), and unbinds.
+   *
+   * @param target - Buffer target
+   * @param buffer - The buffer to update
+   * @param offset - Byte offset into the buffer
+   * @param data - Data to upload
+   * @throws Error if WebGL error occurs or offset is invalid
+   *
+   * @example
+   * glContext.bufferSubData(glContext.gl.ARRAY_BUFFER, buffer, 0, newData);
+   */
+  bufferSubData(
+    target: GLenum,
+    buffer: WebGLBuffer,
+    offset: number,
+    data: ArrayBufferView,
+  ): void {
+    this._gl.bindBuffer(target, buffer);
+    this._gl.bufferSubData(target, offset, data);
+    this._gl.bindBuffer(target, null);
+    this._checkError('bufferSubData');
+  }
+
+  /**
+   * Bind a buffer to a target
+   *
+   * @param target - Buffer target (ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, etc.)
+   * @param buffer - The buffer to bind (or null to unbind)
+   *
+   * @example
+   * glContext.bindBuffer(glContext.gl.ARRAY_BUFFER, buffer);
+   */
+  bindBuffer(target: GLenum, buffer: WebGLBuffer | null): void {
+    this._gl.bindBuffer(target, buffer);
+    this._checkError('bindBuffer');
+  }
+
+  /**
+   * Unbind a buffer from a target
+   *
+   * @param target - Buffer target to unbind from
+   *
+   * @example
+   * glContext.unbindBuffer(glContext.gl.ARRAY_BUFFER);
+   */
+  unbindBuffer(target: GLenum): void {
+    this._gl.bindBuffer(target, null);
+    this._checkError('unbindBuffer');
+  }
+
+  /**
+   * Get a buffer parameter
+   *
+   * @param target - Buffer target
+   * @param pname - Parameter name (e.g., BUFFER_SIZE, BUFFER_USAGE)
+   * @returns The parameter value
+   *
+   * @example
+   * const size = glContext.getBufferParameter(glContext.gl.ARRAY_BUFFER, glContext.gl.BUFFER_SIZE);
+   */
+  getBufferParameter(target: GLenum, pname: GLenum): any {
+    return this._gl.getBufferParameter(target, pname);
+  }
+
+  /**
    * Creates a WebGL texture
    *
-   * @returns The created WebGL texture
+   * Creates an empty texture object. Use texImage2D() or texSubImage2D() to populate.
+   *
+   * @returns The created WebGL texture (unbound)
    * @throws Error if texture creation fails
    *
    * @example
    * const texture = glContext.createTexture();
+   * glContext.texImage2D(texture, glContext.gl.TEXTURE_2D, imageData, width, height);
    */
   createTexture(): WebGLTexture {
     const texture = this._gl.createTexture();
@@ -655,13 +745,179 @@ export class GLContext {
   }
 
   /**
+   * Bind a texture to a target and optional texture unit
+   *
+   * @param target - Texture target (e.g., TEXTURE_2D, TEXTURE_CUBE_MAP)
+   * @param texture - The texture to bind (or null to unbind)
+   * @param unit - Optional texture unit (0-based, default: 0)
+   *
+   * @example
+   * glContext.bindTexture(glContext.gl.TEXTURE_2D, texture, 0);
+   */
+  bindTexture(target: GLenum, texture: WebGLTexture | null, unit: number = 0): void {
+    this._gl.activeTexture(this._gl.TEXTURE0 + unit);
+    this._gl.bindTexture(target, texture);
+    this._checkError('bindTexture');
+  }
+
+  /**
+   * Unbind a texture from a target
+   *
+   * @param target - Texture target to unbind from
+   * @param unit - Optional texture unit (0-based, default: 0)
+   *
+   * @example
+   * glContext.unbindTexture(glContext.gl.TEXTURE_2D, 0);
+   */
+  unbindTexture(target: GLenum, unit: number = 0): void {
+    this._gl.activeTexture(this._gl.TEXTURE0 + unit);
+    this._gl.bindTexture(target, null);
+    this._checkError('unbindTexture');
+  }
+
+  /**
+   * Set a texture parameter (integer)
+   *
+   * @param target - Texture target
+   * @param texture - The texture to configure
+   * @param pname - Parameter name (e.g., TEXTURE_MIN_FILTER, TEXTURE_MAG_FILTER)
+   * @param param - Parameter value
+   *
+   * @example
+   * glContext.texParameteri(glContext.gl.TEXTURE_2D, texture,
+   *   glContext.gl.TEXTURE_MIN_FILTER, glContext.gl.LINEAR);
+   */
+  texParameteri(target: GLenum, texture: WebGLTexture, pname: GLenum, param: GLint): void {
+    this._gl.bindTexture(target, texture);
+    this._gl.texParameteri(target, pname, param);
+    this._gl.bindTexture(target, null);
+    this._checkError('texParameteri');
+  }
+
+  /**
+   * Set a texture parameter (float)
+   *
+   * @param target - Texture target
+   * @param texture - The texture to configure
+   * @param pname - Parameter name
+   * @param param - Parameter value
+   *
+   * @example
+   * glContext.texParameterf(glContext.gl.TEXTURE_2D, texture,
+   *   glContext.gl.TEXTURE_LOD_BIAS, 0.5);
+   */
+  texParameterf(target: GLenum, texture: WebGLTexture, pname: GLenum, param: GLfloat): void {
+    this._gl.bindTexture(target, texture);
+    this._gl.texParameterf(target, pname, param);
+    this._gl.bindTexture(target, null);
+    this._checkError('texParameterf');
+  }
+
+  /**
+   * Specify a 2D texture image
+   *
+   * Binds the texture, uploads image data, and unbinds.
+   *
+   * @param target - Texture target (e.g., TEXTURE_2D)
+   * @param texture - The texture to populate
+   * @param level - Mipmap level (0 for base level)
+   * @param internalFormat - Internal format (e.g., RGB, RGBA)
+   * @param width - Image width in pixels
+   * @param height - Image height in pixels
+   * @param border - Border width (must be 0)
+   * @param format - Pixel format (e.g., RGB, RGBA)
+   * @param type - Pixel type (e.g., UNSIGNED_BYTE, FLOAT)
+   * @param data - Image data (optional)
+   *
+   * @example
+   * glContext.texImage2D(glContext.gl.TEXTURE_2D, texture, 0,
+   *   glContext.gl.RGBA, 256, 256, 0,
+   *   glContext.gl.RGBA, glContext.gl.UNSIGNED_BYTE, imageData);
+   */
+  texImage2D(
+    target: GLenum,
+    texture: WebGLTexture,
+    level: GLint,
+    internalFormat: GLint,
+    width: GLsizei,
+    height: GLsizei,
+    border: GLint,
+    format: GLenum,
+    type: GLenum,
+    data?: ArrayBufferView | null,
+  ): void {
+    this._gl.bindTexture(target, texture);
+    this._gl.texImage2D(target, level, internalFormat, width, height, border, format, type, data ?? null);
+    this._gl.bindTexture(target, null);
+    this._checkError('texImage2D');
+  }
+
+  /**
+   * Update part of a 2D texture image
+   *
+   * Binds the texture, uploads partial image data, and unbinds.
+   *
+   * @param target - Texture target
+   * @param texture - The texture to update
+   * @param level - Mipmap level
+   * @param xoffset - X offset in pixels
+   * @param yoffset - Y offset in pixels
+   * @param width - Region width in pixels
+   * @param height - Region height in pixels
+   * @param format - Pixel format
+   * @param type - Pixel type
+   * @param data - Image data to upload
+   *
+   * @example
+   * glContext.texSubImage2D(glContext.gl.TEXTURE_2D, texture, 0,
+   *   0, 0, 128, 128,
+   *   glContext.gl.RGBA, glContext.gl.UNSIGNED_BYTE, partialData);
+   */
+  texSubImage2D(
+    target: GLenum,
+    texture: WebGLTexture,
+    level: GLint,
+    xoffset: GLint,
+    yoffset: GLint,
+    width: GLsizei,
+    height: GLsizei,
+    format: GLenum,
+    type: GLenum,
+    data: ArrayBufferView,
+  ): void {
+    this._gl.bindTexture(target, texture);
+    this._gl.texSubImage2D(target, level, xoffset, yoffset, width, height, format, type, data);
+    this._gl.bindTexture(target, null);
+    this._checkError('texSubImage2D');
+  }
+
+  /**
+   * Get a texture parameter
+   *
+   * @param target - Texture target
+   * @param pname - Parameter name (e.g., TEXTURE_MIN_FILTER)
+   * @returns The parameter value
+   *
+   * @example
+   * const minFilter = glContext.getTexParameter(glContext.gl.TEXTURE_2D, glContext.gl.TEXTURE_MIN_FILTER);
+   */
+  getTexParameter(target: GLenum, pname: GLenum): any {
+    return this._gl.getTexParameter(target, pname);
+  }
+
+  /**
    * Creates a vertex array object (VAO)
    *
-   * @returns The created vertex array object
+   * Creates an empty VAO. Use vertexAttribPointer() and enableVertexAttribArray() to configure.
+   *
+   * @returns The created vertex array object (unbound)
    * @throws Error if VAO creation fails
    *
    * @example
    * const vao = glContext.createVertexArray();
+   * glContext.bindVertexArray(vao);
+   * glContext.vertexAttribPointer(0, 3, glContext.gl.FLOAT, false, 12, 0);
+   * glContext.unbindVertexArray();
    */
   createVertexArray(): WebGLVertexArrayObject {
     const vao = this._gl.createVertexArray();
@@ -673,6 +929,103 @@ export class GLContext {
     this._checkError('createVertexArray');
 
     return vao;
+  }
+
+  /**
+   * Bind a vertex array object
+   *
+   * @param vao - The VAO to bind (or null to unbind)
+   *
+   * @example
+   * glContext.bindVertexArray(vao);
+   */
+  bindVertexArray(vao: WebGLVertexArrayObject | null): void {
+    this._gl.bindVertexArray(vao);
+    this._checkError('bindVertexArray');
+  }
+
+  /**
+   * Unbind the current vertex array object
+   *
+   * @example
+   * glContext.unbindVertexArray();
+   */
+  unbindVertexArray(): void {
+    this._gl.bindVertexArray(null);
+    this._checkError('unbindVertexArray');
+  }
+
+  /**
+   * Define a vertex attribute layout
+   *
+   * Must be called while a VAO is bound. Associates a buffer location with a vertex attribute.
+   *
+   * @param index - Attribute index
+   * @param size - Number of components (1-4)
+   * @param type - Data type (e.g., FLOAT, UNSIGNED_INT)
+   * @param normalized - Whether to normalize fixed-point values
+   * @param stride - Byte offset between consecutive attributes
+   * @param offset - Byte offset of first component in buffer
+   *
+   * @example
+   * glContext.bindVertexArray(vao);
+   * glContext.vertexAttribPointer(0, 3, glContext.gl.FLOAT, false, 12, 0);
+   * glContext.unbindVertexArray();
+   */
+  vertexAttribPointer(
+    index: GLuint,
+    size: GLint,
+    type: GLenum,
+    normalized: GLboolean,
+    stride: GLsizei,
+    offset: GLintptr,
+  ): void {
+    this._gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
+    this._checkError('vertexAttribPointer');
+  }
+
+  /**
+   * Enable a vertex attribute array
+   *
+   * Must be called while a VAO is bound.
+   *
+   * @param index - Attribute index to enable
+   *
+   * @example
+   * glContext.bindVertexArray(vao);
+   * glContext.enableVertexAttribArray(0);
+   * glContext.unbindVertexArray();
+   */
+  enableVertexAttribArray(index: GLuint): void {
+    this._gl.enableVertexAttribArray(index);
+    this._checkError('enableVertexAttribArray');
+  }
+
+  /**
+   * Disable a vertex attribute array
+   *
+   * @param index - Attribute index to disable
+   *
+   * @example
+   * glContext.disableVertexAttribArray(0);
+   */
+  disableVertexAttribArray(index: GLuint): void {
+    this._gl.disableVertexAttribArray(index);
+    this._checkError('disableVertexAttribArray');
+  }
+
+  /**
+   * Get a vertex attribute value
+   *
+   * @param index - Attribute index
+   * @param pname - Parameter name (e.g., VERTEX_ATTRIB_ARRAY_ENABLED)
+   * @returns The attribute value
+   *
+   * @example
+   * const enabled = glContext.getVertexAttrib(0, glContext.gl.VERTEX_ATTRIB_ARRAY_ENABLED);
+   */
+  getVertexAttrib(index: GLuint, pname: GLenum): any {
+    return this._gl.getVertexAttrib(index, pname);
   }
 
   /**
