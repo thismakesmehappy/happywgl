@@ -14,6 +14,28 @@ This document outlines the complete plan for building a modular TypeScript WebGL
 - Progressive development: start small, build incrementally
 - Production-ready library usable in other projects
 
+## Course Integration & Learning Outcomes
+
+This library serves dual purposes:
+
+1. **CSI699 (Real-Time WebGL Graphics)** - Interactive 3D rendering, shading, camera systems
+2. **CS536 (Computer Graphics Fundamentals)** - Parametric geometry, mathematical foundations
+3. **Production Library** - Professional-grade 3D graphics engine for real-world applications
+
+### Learning Path Progression
+
+The 10-phase roadmap aligns with both courses while building toward production-readiness:
+
+- **Phases 1-3:** Core rendering (CSI699 A1-A4, foundations)
+- **Phases 4-6:** Advanced rendering & parametric geometry (CSI699 A5-A6, CS536 A1-A6)
+- **Phases 7-8:** Advanced techniques (CSI699 A9, CS536 A7 concepts)
+- **Phases 9-10:** Production integration and optimization
+
+All features include:
+- Educational explanations of underlying graphics concepts
+- Multiple usage tiers (beginner API → expert access)
+- Direct comparisons to course material and assignments
+
 ## Tech Stack
 
 ### Build System: **Vite**
@@ -51,64 +73,98 @@ src/
 ├── core/              # Core rendering infrastructure
 │   ├── Canvas.ts      # Canvas initialization & WebGL context management
 │   ├── GLContext.ts   # WebGL wrapper with error handling
+│   ├── WebGLState.ts  # Comprehensive WebGL state management
 │   └── Renderer.ts    # Base renderer interface
-├── math/              # Mathematical primitives
-│   ├── Vector2.ts
-│   ├── Vector3.ts
-│   ├── Vector4.ts
-│   ├── Matrix3.ts
-│   ├── Matrix4.ts
-│   ├── Quaternion.ts
+├── math/              # Mathematical primitives (hierarchical organization)
+│   ├── vectors/
+│   │   ├── Vector.ts  # Abstract base class
+│   │   ├── Vector2.ts # 2D vector
+│   │   ├── Vector3.ts # 3D vector
+│   │   ├── Vector4.ts # 4D vector
+│   │   └── index.ts
+│   ├── matrices/
+│   │   ├── Matrix.ts      # Abstract base class
+│   │   ├── SquareMatrix.ts # Square matrix base
+│   │   ├── Matrix2.ts      # 2×2 matrix
+│   │   ├── Matrix3.ts      # 3×3 matrix
+│   │   ├── Matrix4.ts      # 4×4 matrix (primary for 3D graphics)
+│   │   └── index.ts
+│   ├── quaternions/
+│   │   ├── Quaternion.ts # Rotation representation
+│   │   └── index.ts
+│   └── index.ts         # Re-exports concrete implementations only
+├── resources/         # GPU resource management (hierarchical organization)
+│   ├── buffers/
+│   │   ├── Buffer.ts              # Abstract base class
+│   │   ├── VertexBuffer.ts        # Vertex data storage
+│   │   ├── IndexBuffer.ts         # Index/element data
+│   │   ├── CopyReadBuffer.ts      # Copy source buffer
+│   │   ├── CopyWriteBuffer.ts     # Copy destination buffer
+│   │   ├── PixelPackBuffer.ts     # Pixel read operations
+│   │   ├── PixelUnpackBuffer.ts   # Pixel write operations
+│   │   ├── TransformFeedbackBuffer.ts # Transform feedback data
+│   │   ├── UniformBuffer.ts       # Uniform data blocks
+│   │   └── index.ts
+│   ├── Program.ts      # Shader program compilation & linking
+│   ├── Shader.ts       # User-facing shader wrapper
+│   ├── Texture.ts      # Texture loading & management
+│   ├── VertexArray.ts  # VAO abstraction (WebGL 2)
 │   └── index.ts
-├── resources/         # GPU resource management
-│   ├── Buffer.ts      # Vertex/Index buffer abstraction
-│   ├── Shader.ts      # Shader compilation & program management
-│   ├── Texture.ts     # Texture loading & management
-│   ├── VertexArray.ts # VAO abstraction (WebGL 2)
-│   └── index.ts
-├── geometry/          # Geometry generation & management
-│   ├── Geometry.ts    # Base geometry class
-│   ├── BufferGeometry.ts # Geometry with buffer data
+├── geometry/          # Geometry generation & management (hierarchical organization)
+│   ├── Geometry.ts    # Abstract base class
+│   ├── BufferGeometry.ts # Concrete: geometry with buffer data
 │   ├── primitives/    # Primitive shape generators
+│   │   ├── Primitive.ts # Abstract base
 │   │   ├── Box.ts
 │   │   ├── Sphere.ts
 │   │   ├── Plane.ts
 │   │   ├── Cylinder.ts
-│   │   └── Torus.ts
+│   │   ├── Torus.ts
+│   │   └── index.ts
 │   ├── curves/        # Curve generation
+│   │   ├── Curve.ts   # Abstract base
 │   │   ├── BezierCurve.ts
-│   │   ├── CatmullRomCurve.ts
+│   │   ├── CatmullRomSpline.ts
+│   │   ├── BSpline.ts
+│   │   ├── CurveGeometry.ts
 │   │   └── index.ts
 │   ├── surfaces/      # Surface generation
+│   │   ├── Surface.ts # Abstract base
+│   │   ├── BezierPatch.ts
+│   │   ├── SurfaceOfRevolution.ts
 │   │   ├── Superellipsoid.ts
-│   │   ├── RotationalSolid.ts
+│   │   ├── SurfaceGeometry.ts
 │   │   └── index.ts
-│   └── index.ts
+│   └── index.ts       # Re-exports only concrete implementations
 ├── scene/             # Scene graph & objects
 │   ├── Object3D.ts    # Base class for all scene objects
 │   ├── Scene.ts       # Root scene container
 │   ├── Group.ts       # Container for grouping objects
 │   ├── Mesh.ts        # Renderable mesh object
 │   └── index.ts
-├── camera/            # Camera implementations
-│   ├── Camera.ts      # Base camera class
-│   ├── PerspectiveCamera.ts
-│   ├── OrthographicCamera.ts
-│   └── index.ts
-├── lights/            # Lighting system
-│   ├── Light.ts       # Base light class
-│   ├── AmbientLight.ts
-│   ├── DirectionalLight.ts
-│   ├── PointLight.ts
-│   ├── SpotLight.ts
-│   └── index.ts
-├── materials/         # Material system
-│   ├── Material.ts    # Base material class
-│   ├── BasicMaterial.ts
-│   ├── LambertMaterial.ts
-│   ├── PhongMaterial.ts
-│   ├── MirrorMaterial.ts
-│   └── index.ts
+├── camera/            # Camera implementations (hierarchical organization)
+│   ├── Camera.ts      # Abstract base camera class
+│   ├── PerspectiveCamera.ts # Perspective projection
+│   ├── OrthographicCamera.ts # Orthographic projection
+│   ├── OrbitCamera.ts  # Orbital camera control
+│   ├── FirstPersonCamera.ts # First-person camera
+│   └── index.ts       # Re-exports only concrete implementations
+├── lights/            # Lighting system (hierarchical organization)
+│   ├── Light.ts       # Abstract base light class
+│   ├── AmbientLight.ts # Ambient illumination
+│   ├── DirectionalLight.ts # Directional light (sun)
+│   ├── PointLight.ts   # Point light with attenuation
+│   ├── SpotLight.ts    # Spotlight with falloff
+│   ├── LightManager.ts # Multi-light state management
+│   └── index.ts       # Re-exports only concrete light types
+├── materials/         # Material system (hierarchical organization)
+│   ├── Material.ts    # Abstract base material class
+│   ├── BasicMaterial.ts # Simple flat color material
+│   ├── LambertMaterial.ts # Lambert diffuse shading
+│   ├── PhongMaterial.ts # Phong specular shading
+│   ├── GouraudMaterial.ts # Per-vertex lighting
+│   ├── PBRMaterial.ts  # Physically-based rendering
+│   └── index.ts       # Re-exports only concrete material types
 ├── animation/         # Animation system
 │   ├── AnimationMixer.ts # Animation mixer for managing multiple animations
 │   ├── AnimationClip.ts  # Keyframe animation clips
@@ -228,22 +284,103 @@ Before diving into geometry, centralize error handling across the codebase:
 - Parametric surface generation
 - Curve interpolation algorithms
 
-### Phase 3: Scene Graph & Cameras (Weeks 9-11)
-**Goal:** Hierarchical scene management and camera system
+### Phase 2B: Parametric Curves (Weeks 9-11) - Parallel or Sequential
+**Goal:** Foundation for parametric geometry (CS536 A1-A2, CSI699 A7)
+
+**Status:** Can be implemented in parallel with Phase 2 or folded into Phase 3 depending on timeline.
 
 **Deliverables:**
+- `Curve.ts` (abstract) - Base class for all curve types
+- `BezierCurve.ts` - Arbitrary-degree Bezier curves
+  - De Casteljau's algorithm for evaluation
+  - Support for arbitrary control point count
+  - Configurable segment tessellation
+  - Control point visualization
+- `CatmullRomSpline.ts` - C1 piecewise splines
+  - Hermite curve conversion from interpolation points
+  - Kochanek-Bartels tension parameter
+  - Smooth interpolation through control points
+- `BSpline.ts` - B-spline curves
+  - Knot vector management
+  - Arbitrary degree support
+  - Foundation for NURBS
+- `CurveGeometry.ts` - Convert curves to polyline geometry
+
+**Learning Focus (CS536 A1-A2, CSI699 A7):**
+- Parametric curve evaluation and approximation
+- Control point-based geometry definition
+- Continuity concepts (C0, C1, C2)
+- Derivative computation for tangent vectors and animation paths
+- De Casteljau's algorithm vs. basis function evaluation
+- Polyline tessellation and rendering quality
+- Tension and parameter control for smooth curves
+
+**Capabilities:**
+- Define arbitrary curves from control points
+- Interactive control point manipulation
+- Animation paths for cameras and objects
+- Smooth interpolation with tension control
+- Curve simplification and evaluation
+
+**Implementation Pattern:**
+De Casteljau's algorithm should be emphasized for educational value—it demonstrates recursive/iterative evaluation clearly. This is foundational understanding for Phase 3 (surfaces).
+
+### Phase 3: Scene Graph, Cameras & Parametric Surfaces (Weeks 12-16)
+**Goal:** Hierarchical scene management, camera system, and parametric surface generation
+
+**Deliverables - Scene Graph & Cameras:**
 - Complete scene graph with parent/child relationships
 - Transform hierarchy (local/world matrices)
 - PerspectiveCamera and OrthographicCamera
 - Camera controls (basic orbit controls)
 - Frustum culling (basic implementation)
-- Demo: Scene with multiple objects, camera navigation
+
+**Deliverables - Parametric Surfaces (CS536 A3-A6, CSI699 A7):**
+- `Surface.ts` (abstract) - Base surface class
+- `BezierPatch.ts` - Bicubic Bezier surfaces
+  - Biparametric evaluation (u-v parameterization)
+  - Iterative tessellation (not recursive)
+  - Exact normal computation via partial derivatives: ∂S/∂u × ∂S/∂v
+  - Flat and smooth shading support
+  - Control point visualization
+- `SurfaceOfRevolution.ts` - Rotate 2D curves around axis
+  - Profile-based surface generation from curves
+  - Smooth surface capping for closed surfaces
+  - u parameter: position along profile curve
+  - v parameter: rotation angle around Z-axis (0 to 2π)
+- `Superellipsoid.ts` - Generalized ellipsoid surfaces
+  - Arbitrary shape parameters (s1, s2)
+  - Scale factors (A, B, C) for dimensions
+  - Smooth pole handling
+  - Parametric evaluation with sign function
+- `SurfaceGeometry.ts` - Generate triangle meshes from surfaces
 
 **Learning Focus:**
-- Scene graph architecture patterns
-- Matrix multiplication order (local vs world space)
-- View and projection matrices
-- Camera transformations and coordinate systems
+- **Scene Graph & Cameras:**
+  - Scene graph architecture patterns
+  - Matrix multiplication order (local vs world space)
+  - View and projection matrices
+  - Camera transformations and coordinate systems
+- **Parametric Surfaces (CS536 A3-A6):**
+  - Surface patch evaluation and biparametric tessellation
+  - Partial derivatives for exact normal computation
+  - Smooth vs. flat shading on complex surfaces
+  - Parameter space (u,v) vs. 3D space (x,y,z)
+  - Tessellation quality vs. memory trade-offs
+  - Iterative evaluation efficiency vs. recursive clarity
+  - Normal continuity and smooth shading quality
+
+**Capabilities:**
+- Define surfaces from control point grids or parametric equations
+- Interactive tessellation level control
+- Smooth normal interpolation for realistic lighting
+- Memory-efficient mesh generation
+- Camera-based scene navigation
+
+**Demo:** Scene with multiple parametric surfaces, interactive camera, tessellation control
+
+**Implementation Note:**
+Emphasis on exact normal computation (via partial derivatives) rather than mesh-derived approximations—this is critical for realistic lighting on curved surfaces and directly maps to CS536 requirements.
 
 ### Phase 4: Lighting & Materials (Weeks 12-15)
 **Goal:** Realistic lighting and material system

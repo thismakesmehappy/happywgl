@@ -6,6 +6,32 @@
 
 ---
 
+## Course Alignment & Educational Mapping
+
+This architecture supports both foundational (CS536) and real-time (CSI699) graphics programming:
+
+### CS536 Computer Graphics Fundamentals
+- **Phase 2B (Curves):** De Casteljau's algorithm, parametric evaluation, C0/C1/C2 continuity
+- **Phase 3 (Surfaces):** Bezier patches, surfaces of revolution, superellipsoid evaluation
+- **Phase 3 (Normals):** Exact normal computation via partial derivatives
+- **Phase 6 (Asset Loading):** SMF format support (course standard)
+
+### CSI699 Real-Time WebGL Graphics
+- **Phase 1:** WebGL 2.0 fundamentals, 2D polygon rendering
+- **Phase 2:** 3D transformations, scene hierarchy
+- **Phase 3:** User interaction and camera controls
+- **Phase 4:** Lighting and shading models (Phong, Gouraud)
+- **Phase 8:** Picking via frame buffer objects (FBO)
+- **Phase 9:** Complete scene rendering integration
+
+### Tier-Based Learning
+The three-tier architecture (beginner/intermediate/expert) aligns with course progression:
+- **Tier 1 (Beginner):** Use high-level APIs (BasicMaterial, Geometry)
+- **Tier 2 (Intermediate):** Customize materials, write shaders, adjust parameters
+- **Tier 3 (Expert):** Direct WebGL access, custom rendering, off-screen rendering
+
+---
+
 ## Architecture Layers Overview
 
 ```
@@ -38,10 +64,11 @@
 ┌─────────────────────────────────────────────────────────────┐
 │ Layer 2: GPU Resources (Direct WebGL Wrappers)              │
 ├─────────────────────────────────────────────────────────────┤
-│  Program, VertexArray, Texture, Buffer                       │
+│  Buffer, Program, VertexArray, Texture, Framebuffer         │
 │  (Low-level resource management)                             │
 │  Design Pattern: Static binding tracking + GPU query        │
 │  Self-registration for GLContext cleanup tracking           │
+│  Framebuffer (Phase 7+): Render-to-texture, post-processing │
 └─────────────────────────────────────────────────────────────┘
                             ▲
                             │ uses
@@ -514,6 +541,236 @@ src/
 ├── scene/ (Object3D, Scene, Mesh - single types)
 └── renderer/ (future: webgl/, canvas/ for backend-specific implementations)
 ```
+
+---
+
+## Parametric Geometry Design (Phases 2B & 3)
+
+Phases 2B and 3 introduce parametric geometry—objects defined by mathematical functions rather than pre-defined vertices.
+
+### Curve Architecture (Phase 2B)
+
+```typescript
+abstract class Curve {
+  // Evaluate curve at parameter t ∈ [0,1]
+  evaluate(t: number): Vector3;
+
+  // Get derivative (tangent) at parameter t
+  derivative(t: number): Vector3;
+
+  // Generate polyline approximation
+  toGeometry(segmentCount: number): Geometry;
+}
+
+class BezierCurve extends Curve {
+  // De Casteljau's algorithm for efficient evaluation
+  // Supports arbitrary control point count
+}
+
+class CatmullRomSpline extends Curve {
+  // Hermite curve interpolation between points
+  // Kochanek-Bartels tension parameter
+}
+```
+
+### Surface Architecture (Phase 3)
+
+```typescript
+abstract class Surface {
+  // Evaluate surface at parameters (u,v) ∈ [0,1]²
+  evaluate(u: number, v: number): Vector3;
+
+  // Get surface normal at (u,v) via partial derivatives
+  normal(u: number, v: number): Vector3;
+
+  // Generate triangle mesh with u×v tessellation
+  toGeometry(uSegments: number, vSegments: number): Geometry;
+}
+
+class BezierPatch extends Surface {
+  // 4×4 control point grid
+  // Biparametric evaluation: de Casteljau in both u and v
+  // Exact normals via: ∂S/∂u × ∂S/∂v
+}
+
+class SurfaceOfRevolution extends Surface {
+  // Profile curve rotated around Z-axis
+  // u: position along profile curve
+  // v: rotation angle around Z-axis (0 to 2π)
+  // Exact normals via: rotation + profile derivative
+}
+
+class Superellipsoid extends Surface {
+  // Parametric generalized ellipsoid
+  // Shape parameters (s1, s2) control surface curvature
+  // Scale factors (A, B, C) control dimensions
+}
+```
+
+### Mathematical Precision
+
+**Column-Major Matrix Convention:**
+All matrices use column-major storage (WebGL/GLSL standard):
+- De Casteljau basis functions use binomial coefficients
+- Surface normals computed via cross product of partial derivatives
+- Exact precision maintained throughout pipeline
+
+**Iterative vs. Recursive Evaluation:**
+- Use iterative De Casteljau for efficiency (CS536 requirement)
+- Recursive evaluation useful for learning but slower
+- Implementation details matter for numerical stability
+
+**Normal Computation:**
+- **Exact normals** for surfaces: ∂S/∂u × ∂S/∂v
+- **Averaged normals** for meshes: average face normals at each vertex
+- Distinction important for smooth shading quality (CS536 A5-A6)
+
+---
+
+## Lighting & Shading Architecture (Phase 4)
+
+### Lighting Model
+
+Two complementary shading algorithms are implemented:
+
+**Gouraud Shading (Per-Vertex)**
+- Lighting computation: Vertex shader
+- Color interpolation: Rasterizer (automatic)
+- Pro: Efficient, per-fragment interpolation is free
+- Con: Limited specular highlights (linear interpolation may distort)
+- Use case: Large, smoothly-lit surfaces
+
+**Phong Shading (Per-Fragment)**
+- Lighting computation: Fragment shader
+- Normal interpolation: Rasterizer (automatic)
+- Pro: High-quality specular highlights, more accurate
+- Con: More expensive computationally
+- Use case: Detailed objects, glossy materials
+
+### Phong Lighting Model
+
+The library implements the full Phong model:
+
+```
+Color = ambient + diffuse + specular
+
+ambient = Ka · Ia
+
+diffuse = Kd · Id · max(0, N·L)
+
+specular = Ks · Is · max(0, R·V)^Sh
+
+where:
+  Ka, Kd, Ks = material ambient, diffuse, specular
+  Ia, Id, Is = light ambient, diffuse, specular
+  N = surface normal (normalized)
+  L = light direction (normalized)
+  R = reflection direction (normalized)
+  V = view direction (normalized)
+  Sh = shininess exponent
+```
+
+### Material Properties
+
+Materials define how objects interact with light:
+
+```typescript
+interface MaterialProperties {
+  ambient: [r, g, b];    // Ambient color
+  diffuse: [r, g, b];    // Diffuse color
+  specular: [r, g, b];   // Specular color
+  shininess: number;     // 0-128, higher = more glossy
+}
+```
+
+Significant variation between materials is essential for learning:
+- Dull object: Low specular, high ambient
+- Shiny object: High specular, high shininess
+- Mirror: Bright white specular, high shininess
+
+### Multiple Light Sources
+
+The system supports multiple independent light sources:
+
+**World-Space Light:** Fixed position (e.g., sun)
+- Position in world coordinates
+- Moves independently of camera
+
+**Camera-Space Light:** Attached to camera (e.g., headlamp)
+- Position relative to camera
+- Moves with camera
+- Useful for object inspection
+
+Both light types can be interactive:
+```typescript
+// Orbit world light around object
+light.position = [radius * cos(angle), height, radius * sin(angle)];
+
+// Change light color interactively
+light.color = [r, g, b];
+
+// Toggle between Gouraud/Phong
+material.useGouraud = false;  // Use Phong shading
+```
+
+### Implementation Note
+
+The key educational value is understanding that **shading is a choice**, not automatic:
+- Choose Gouraud for efficiency
+- Choose Phong for quality
+- Understand the computational difference
+- See the visual difference in real-time
+
+This directly supports CSI699 A6 assignment requirements.
+
+---
+
+## Advanced Rendering Techniques (Phases 8-9)
+
+### Frame Buffer Objects (Phase 8)
+
+**Purpose:** Render to textures instead of screen, enabling:
+- Off-screen rendering for picking (CSI699 A9)
+- Shadow mapping for realistic shadows
+- Render-to-texture for post-processing
+- Frame capture for image/video export
+
+**Architecture:**
+
+```typescript
+class Framebuffer {
+  // Attach color texture(s)
+  attachColorTexture(index: number, texture: Texture);
+
+  // Attach depth texture
+  attachDepthTexture(texture: Texture);
+
+  // Bind for rendering
+  bind();
+
+  // Read pixel data for picking
+  readPixel(x: number, y: number): [r, g, b, a];
+}
+```
+
+### Picking via Off-Screen Rendering (CSI699 A9)
+
+Instead of selection buffers, use color-coded object rendering:
+
+1. Create framebuffer with unique color per object
+2. Render all objects with ID colors to framebuffer
+3. Read pixel at mouse position
+4. Convert color to object ID
+5. Update object state (e.g., change color)
+
+**Learning Value:** Understand how modern graphics systems implement picking; no special GPU features needed—just creative use of standard rendering.
+
+### Post-Processing Effects (Phase 9)
+
+Generic framework for full-screen effects:
+- Blur, FXAA, bloom, tone mapping
+- Built on framebuffer + quad rendering
+- Each effect is a shader + framebuffer pair
 
 ---
 

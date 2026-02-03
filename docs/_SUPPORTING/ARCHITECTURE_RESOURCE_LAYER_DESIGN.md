@@ -198,6 +198,17 @@ uniformBuffer.bind();
    - Abstract base + 8 specializations grouped together
    - Signals to developers: "Use concrete types, not Buffer abstract base"
 
+6. **Intentional API Minimalism (No `copy()`, `clone()`, or `clear()`)**
+   - **Why not these methods?**
+     - `copy()`: GPU-to-GPU buffer copies are rare in Phase 1-6. PixelPackBuffer/PixelUnpackBuffer handle the main use case (pixel operations). If needed in Phase 7+, add targeted `copyFrom()` then.
+     - `clone()`: Creates false "buffer pooling" pattern. Buffers are tied to specific geometry. Users can `setData()` into fresh buffer if needed. Unclear semantics (clone GPU buffer? Metadata too?).
+     - `clear()`: Overlaps with existing APIs. "Clear" is ambiguous—`dispose()` deallocates, `setData(null)` allocates empty, `updateSubData()` zeros data. Adding `clear()` duplicates without adding value.
+   - **When to reconsider:**
+     - Phase 7+ if GPU-to-GPU copies become common pattern → add `copyFrom(sourceBuffer, offset, length)`
+     - If buffer pooling reveals itself as optimization need → add `reset()` for reuse
+     - Always profile first before adding pooling—JS object allocation is cheap
+   - **Philosophy:** Start minimal, add only when real use cases emerge. Current API (`setData()`, `updateSubData()`, `dispose()`) handles all Phase 1-6 scenarios completely.
+
 ---
 
 ### Shader
@@ -290,6 +301,90 @@ texture.dispose();
 - ✅ Upload image data
 - ✅ Set texture parameters (filters, wrapping)
 - ✅ Bind/unbind to texture units
+
+---
+
+### Framebuffer (Phase 7+)
+
+**Status:** Designed for Phase 7 (Advanced Effects). Not implemented in Phase 1.
+
+```typescript
+// Creation
+const framebuffer = new Framebuffer(ctx);
+
+// Attach texture as render target
+const colorTexture = new Texture(ctx);
+framebuffer.attachTexture(colorTexture, ctx.gl.COLOR_ATTACHMENT0);
+
+// Attach depth texture for shadow mapping (Phase 4+)
+const depthTexture = new Texture(ctx);
+framebuffer.attachDepthTexture(depthTexture);
+
+// Verify completeness
+if (!framebuffer.isComplete()) {
+  throw new Error('Framebuffer not complete');
+}
+
+// Render to texture
+framebuffer.bind();
+renderer.render(scene);  // Renders to attached texture instead of canvas
+
+// Read pixels (for frame capture, picking, etc.)
+const pixels = framebuffer.readPixels();
+
+// Cleanup
+framebuffer.dispose();
+```
+
+**Framebuffer's Responsibilities:**
+- ✅ Create WebGL framebuffer object
+- ✅ Manage color attachments (textures)
+- ✅ Manage depth/stencil attachments
+- ✅ Verify framebuffer completeness
+- ✅ Bind/unbind for rendering
+- ✅ Read pixels from GPU to CPU
+- ✅ Register with GLContext for cleanup
+
+**What Framebuffer Does NOT Do:**
+- ❌ Create textures (user's responsibility)
+- ❌ Create renderbuffers (use Texture for depth/stencil)
+- ❌ Manage rendering (that's Material/Renderer's job)
+
+**Use Cases Across Phases:**
+
+| Phase | Use Case | Example |
+|-------|----------|---------|
+| 4 | Shadow mapping | Render scene to depth texture from light's perspective |
+| 7 | Render-to-texture | Mirror reflections, environment mapping |
+| 7 | Post-processing | Render to texture, apply filters |
+| 9 | Frame capture | Read pixels for PNG/JPEG/video export |
+| 10 | Picking | Render with object IDs, read pixel to identify clicked object |
+
+**Design Decisions:**
+
+1. **Context Binding (Phase 7+ will address)**
+   - Each framebuffer tied to one GLContext (like Buffer)
+   - For multi-context rendering (picking, multiple viewports):
+     - Create separate Framebuffer per context
+     - Share texture data via CPU upload (render to framebuffer, read pixels, upload to other context's texture)
+
+2. **Attachment Strategy**
+   - Color attachments: Always use Texture (not RenderBuffer)
+   - Depth/Stencil: Texture for readback, RenderBuffer for performance-only cases
+   - Simplifies API (users already know Texture)
+
+3. **Completeness Checking**
+   - Public `isComplete()` method for validation
+   - Constructor throws if framebuffer creation fails
+   - Useful for debugging incomplete framebuffers
+
+4. **Pixel Reading**
+   - `readPixels()` returns Uint8Array (RGBA by default)
+   - Used for:
+     - Frame capture (Phase 9)
+     - Picking queries (Phase 10)
+     - Intermediate processing
+   - GPU→CPU transfer can be slow (synchronous operation)
 
 ---
 

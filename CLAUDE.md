@@ -105,6 +105,20 @@ This file is your **development workflow guide** covering:
 
 ---
 
+## Architecture Pre-Planning
+
+The following components have their architecture designed before implementation phase:
+
+- **Framebuffer (Phase 7+)** - Render-to-texture, shadow mapping, frame capture, picking
+  - Layer 2 GPU resource (alongside Buffer, Texture, Program, VertexArray)
+  - Designed to eliminate multi-context workarounds for picking/reflections
+  - Use cases across 4 phases: Shadow mapping (4), Render-to-texture (7), Frame capture (9), Picking (10)
+  - See `docs/_SUPPORTING/ARCHITECTURE_RESOURCE_LAYER_DESIGN.md` section "Framebuffer (Phase 7+)"
+
+**Benefit:** When Phase 7 implementation begins, architecture is clear and we can focus on code quality, not design decisions.
+
+---
+
 ## Development Workflow
 
 ### ⚠️ Important Principles
@@ -530,6 +544,74 @@ ctx.gl.drawArrays(ctx.gl.TRIANGLES, 0, vertexCount);
 - Advanced users have complete control when needed
 - Educational value: see exactly what's happening at each level
 - No "magic" that can't be understood or customized
+
+### Escape Hatches & Wrapper Purity
+
+**Philosophy:** Escape hatches are for **completely bypassing the wrapper**, not for mixing wrapper logic with raw WebGL calls.
+
+**The Contract:**
+- Use the wrapper API consistently (Buffer methods, Material APIs, etc.), OR
+- Use raw WebGL directly on exposed objects (`ctx.gl`, `buffer.buffer`, etc.)
+- **Don't mix them** - if you do, you're responsible for maintaining state consistency
+
+**Why This Matters:**
+- Wrappers cache state (buffer length, element size, binding state, etc.)
+- Raw WebGL calls can invalidate these caches
+- Trying to auto-sync caches leads to performance penalties and hidden side effects
+- Clear responsibility boundaries prevent subtle bugs
+
+**Examples:**
+
+✅ **Good: Pure wrapper usage**
+```typescript
+const buffer = new Buffer(ctx, BufferTarget.ARRAY_BUFFER);
+buffer.setData(new Float32Array([1, 2, 3]));
+console.log(buffer.byteLength); // 12 - accurate
+buffer.updateData(0, new Float32Array([4, 5])); // Synchronized
+```
+
+✅ **Good: Pure raw GL usage**
+```typescript
+const buffer = new Buffer(ctx, BufferTarget.ARRAY_BUFFER);
+// Skip wrapper methods, use raw GL entirely
+ctx.gl.bindBuffer(BufferTarget.ARRAY_BUFFER, buffer.buffer);
+ctx.gl.bufferData(BufferTarget.ARRAY_BUFFER, new Float32Array([1, 2, 3]), ctx.gl.STATIC_DRAW);
+// You manage state yourself
+```
+
+❌ **Bad: Mixing without sync**
+```typescript
+const buffer = new Buffer(ctx, BufferTarget.ARRAY_BUFFER);
+buffer.setData(new Float32Array([1, 2, 3])); // Wrapper says: length=3, byteLength=12
+
+// Raw GL call changes buffer size
+ctx.gl.bindBuffer(BufferTarget.ARRAY_BUFFER, buffer.buffer);
+ctx.gl.bufferData(BufferTarget.ARRAY_BUFFER, new Uint8Array([1, 2]), ctx.gl.STATIC_DRAW);
+
+console.log(buffer.byteLength); // Still returns 12, but GPU has 2 bytes!
+```
+
+✅ **Good: Mixing with explicit sync**
+```typescript
+const buffer = new Buffer(ctx, BufferTarget.ARRAY_BUFFER);
+buffer.setData(new Float32Array([1, 2, 3])); // Wrapper: length=3, elementByteSize=4
+
+// Raw GL call changes buffer
+ctx.gl.bindBuffer(BufferTarget.ARRAY_BUFFER, buffer.buffer);
+ctx.gl.bufferData(BufferTarget.ARRAY_BUFFER, new Uint8Array([1, 2]), ctx.gl.STATIC_DRAW);
+
+// Explicitly sync wrapper state
+buffer.setMetadata(2, 1); // Tell wrapper: 2 elements, 1 byte each
+
+console.log(buffer.byteLength); // Now correctly returns 2
+```
+
+**Benefits:**
+- No hidden performance penalties (no automatic GPU queries)
+- No unexpected side effects (no binding state mutations)
+- Clear intent and responsibility
+- Easier to debug and reason about
+- Educational value: users understand the boundary between abstractions
 
 ---
 

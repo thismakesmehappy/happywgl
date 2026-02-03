@@ -647,15 +647,14 @@ export class GLContext {
    * Creates a new buffer object but does not allocate data or bind it.
    * Use bufferData() to populate the buffer.
    *
-   * @param target - Buffer target (e.g., ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER)
    * @returns The created WebGL buffer (unbound, no data)
    * @throws Error if buffer creation fails
    *
    * @example
-   * const buffer = glContext.createBuffer(glContext.gl.ARRAY_BUFFER);
+   * const buffer = glContext.createBuffer();
    * glContext.bufferData(glContext.gl.ARRAY_BUFFER, buffer, vertices, glContext.gl.STATIC_DRAW);
    */
-  createBuffer(target: GLenum): WebGLBuffer {
+  createBuffer(): WebGLBuffer {
     const buffer = this._gl.createBuffer();
     if (!buffer) {
       throw new Error('Failed to create WebGL buffer');
