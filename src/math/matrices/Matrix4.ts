@@ -1,7 +1,7 @@
 import { Matrix } from './Matrix.js';
 import { SquareMatrix } from './SquareMatrix.js';
-import { Vector3 } from './Vector3.js';
-import { Vector4 } from './Vector4.js';
+import { Vector3 } from '../vectors/Vector3.js';
+import { Vector4 } from '../vectors/Vector4.js';
 
 /**
  * Matrix4 - A 4x4 matrix class

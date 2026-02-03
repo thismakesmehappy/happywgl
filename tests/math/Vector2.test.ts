@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Vector2 } from '../../src/math/Vector2.js';
+import { Vector2 } from '../../src/math/vectors/Vector2.js';
 import { EPSILON } from '../helpers/const.js';
 
 describe('Vector2', () => {

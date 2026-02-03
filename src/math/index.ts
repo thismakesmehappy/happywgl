@@ -5,14 +5,18 @@
  * for 3D graphics calculations.
  */
 
-export * from './Vector.js';
-export * from './Vector2.js';
-export * from './Vector3.js';
-export * from './Vector4.js';
-export * from './Matrix.js';
-export * from './SquareMatrix.js';
-export * from './Matrix2.js';
-export * from './Matrix3.js';
-export * from './Matrix4.js';
-// TODO: Phase 1 - Implement remaining math primitives
-export * from './Quaternion.js';
+// Vectors
+export * from './vectors/Vector.js';
+export * from './vectors/Vector2.js';
+export * from './vectors/Vector3.js';
+export * from './vectors/Vector4.js';
+
+// Matrices
+export * from './matrices/Matrix.js';
+export * from './matrices/SquareMatrix.js';
+export * from './matrices/Matrix2.js';
+export * from './matrices/Matrix3.js';
+export * from './matrices/Matrix4.js';
+
+// Quaternions
+export * from './quaternions/Quaternion.js';

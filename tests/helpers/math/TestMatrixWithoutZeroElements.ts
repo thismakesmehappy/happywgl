@@ -1,4 +1,4 @@
-import { Matrix } from '../../../src/math/Matrix';
+import { Matrix } from '../../../src/math/matrices/Matrix.js';
 
 
 // Create a test matrix class for testing generic implementations

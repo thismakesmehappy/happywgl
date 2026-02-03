@@ -12,11 +12,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Quaternion } from '../../src/math/Quaternion.js';
-import { Vector2 } from '../../src/math/Vector2.js';
-import { Vector3 } from '../../src/math/Vector3.js';
-import { Matrix3 } from '../../src/math/Matrix3.js';
-import { Matrix4 } from '../../src/math/Matrix4.js';
+import { Quaternion } from '../../src/math/quaternions/Quaternion.js';
+import { Vector2 } from '../../src/math/vectors/Vector2.js';
+import { Vector3 } from '../../src/math/vectors/Vector3.js';
+import { Matrix3 } from '../../src/math/matrices/Matrix3.js';
+import { Matrix4 } from '../../src/math/matrices/Matrix4.js';
 import { EPSILON } from '../helpers/const.js';
 
 const IDENTITY = new Quaternion(0, 0, 0, 1);

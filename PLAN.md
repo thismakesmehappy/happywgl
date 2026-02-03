@@ -599,3 +599,129 @@ An optional module (`@webgl-lib/interactivity`) provides input handling:
 - Event-driven architecture for input callbacks
 
 See Phase 9 and Phase 10 for detailed implementation plans.
+
+---
+
+## Future Patterns: Opinionated Helpers (Phase 4+ Consideration)
+
+As the library matures and usage patterns emerge, we may add convenience helpers to reduce boilerplate for common scenarios. These are documented here as "future patterns" to defer implementation until we have real-world evidence they're needed.
+
+### Rationale for Deferral
+
+- **Don't know patterns yet** - Core functionality (Phase 1-3) needs to be built first
+- **Avoid over-engineering** - Better to implement helpers when 3+ use cases clearly need them
+- **Material system first** - Materials (Layer 3) are where abstraction should live initially
+- **Can ship MVP without them** - Core library is complete and useful at Phase 3
+
+### Potential Helper Categories (if implemented Phase 4+)
+
+#### 1. GLContext State Presets
+
+Common rendering scenarios that bundle state configurations:
+
+```typescript
+// Transparency/blending scenario
+const ctx = GLContext.forTransparency(canvas);
+// Enables: blending with SRC_ALPHA/ONE_MINUS_SRC_ALPHA
+// Disables: depth write (keeps depth test for ordering)
+
+// Post-processing scenario
+const ctx = GLContext.forPostProcessing(canvas);
+// Disables: depth test, depth write (full-screen effects)
+
+// Particle effects scenario
+const ctx = GLContext.forParticles(canvas);
+// Enables: additive blending, disables depth test
+// Appropriate for many particles overlapping
+
+// Alternative: Preset enum
+const ctx = new GLContext(canvas, GLContext.Preset.TRANSPARENCY);
+```
+
+#### 2. Material Recipe Builders
+
+Pre-configured material classes for common use cases:
+
+```typescript
+// Instead of manually setting up shader + uniforms
+const material = TransparencyMaterial.create(ctx, {
+  color: [1, 0, 0, 0.5],
+  refraction: 1.33
+});
+
+const material = ParticleMaterial.create(ctx, {
+  emission: [1, 1, 0],
+  fadeWithAge: true
+});
+
+const material = SkybxMaterial.create(ctx, {
+  cubeTexture: skyboxTexture
+});
+```
+
+#### 3. Program Factories
+
+Specialized programs for common rendering tasks:
+
+```typescript
+// Full-screen blit (copying texture to screen)
+const blitProgram = Program.createBlit(ctx);
+
+// Point sprite rendering (particles, stars)
+const pointProgram = Program.createPointSprite(ctx);
+
+// Skybox rendering (special depth handling)
+const skyboxProgram = Program.createSkybox(ctx);
+
+// Screen-space effects
+const bloomProgram = Program.createBloom(ctx);
+```
+
+#### 4. Context + Canvas + Program Bundles
+
+Pre-configured "recipe" combinations for specific effects:
+
+```typescript
+// Bundle for transparent objects
+class TransparencyContext {
+  canvas: Canvas;
+  glContext: GLContext;
+  material: Material;
+  // Pre-configured for rendering transparent geometry
+}
+
+// Bundle for particle simulation
+class ParticleContext {
+  canvas: Canvas;
+  glContext: GLContext;
+  program: Program;
+  positionBuffer: Buffer;
+  velocityBuffer: Buffer;
+  // Pre-configured for particle rendering
+}
+```
+
+### Implementation Decision Criteria
+
+Add helpers when ALL of these are true:
+
+1. **Pattern Maturity** - Same configuration appears in 3+ complete examples/projects
+2. **Boilerplate Cost** - Requires 5+ lines of setup code to use correctly
+3. **Benefit Clear** - Significant reduction in user code complexity
+4. **No Duplication** - Pattern not already covered by Material classes
+5. **Stable API** - Underlying APIs have proven stable over time
+
+### Timeline
+
+- **Phase 1-3:** Build core materials and basic examples
+- **Phase 4:** Review usage patterns, decide if helpers needed
+- **Phase 5+:** Implement helpers as needed based on evidence
+
+### Philosophy
+
+**Ship the MVP without helpers.** The core library (Phases 1-3) provides:
+- Clear abstractions (Material, Shader, Program)
+- Composable components (Buffer, VertexArray, Texture)
+- Escape hatches (direct GLContext access)
+
+Users can compose these to create any effect. If patterns emerge that repeatedly require the same combinations, helpers can be added without changing the core API.

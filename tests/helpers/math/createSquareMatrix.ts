@@ -1,5 +1,5 @@
-import { SquareMatrix } from '../../../src/math/SquareMatrix';
-import { Matrix } from '../../../src/math/Matrix';
+import { SquareMatrix } from '../../../src/math/matrices/SquareMatrix.js';
+import { Matrix } from '../../../src/math/matrices/Matrix.js';
 
 export function createSquareMatrix(
   dimension: number): new (...args: number[]) => SquareMatrix {

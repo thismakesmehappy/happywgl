@@ -1,6 +1,6 @@
 import { Matrix } from './Matrix.js';
 import { SquareMatrix } from './SquareMatrix.js';
-import { Vector2 } from './Vector2.js';
+import { Vector2 } from '../vectors/Vector2.js';
 
 /**
  * Matrix2 - A 2x2 matrix class

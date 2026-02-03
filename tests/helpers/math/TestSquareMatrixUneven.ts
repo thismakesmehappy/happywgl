@@ -1,4 +1,4 @@
-import { SquareMatrix } from '../../../src/math/SquareMatrix.js';
+import { SquareMatrix } from '../../../src/math/matrices/SquareMatrix.js';
 
 // Create a test matrix class for testing generic implementations
 export class TestSquareMatrixUneven extends SquareMatrix {

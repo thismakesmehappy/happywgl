@@ -224,6 +224,41 @@ renderer.setSize(canvas.width, canvas.height);
 
 This separation of concerns allows Canvas to be useful for any rendering approach, while GLContext focuses purely on WebGL state management.
 
+### 7. Abstract Renderer Base Class (Phase 1)
+
+**Design:** Renderer is an abstract base class defining the rendering interface
+
+**Purpose:** Provides a common interface for all renderer implementations:
+- WebGLRenderer (Phase 4) - WebGL 2.0 implementation
+- CanvasRenderer (Phase 8+) - Canvas 2D fallback
+- WebGPURenderer (Future) - Next-gen graphics API
+
+**Phase 1 Responsibilities:**
+```typescript
+abstract class Renderer {
+  // Common state
+  protected _width: number;
+  protected _height: number;
+  protected _clearColor: { r, g, b, a };
+
+  // Public interface
+  setSize(width, height): void
+  setClearColor(r, g, b, a): void
+  clear(): void
+  abstract render(): void    // Subclasses implement
+  abstract dispose(): void   // Subclasses implement
+}
+```
+
+**Benefits:**
+- ✅ Defines common rendering interface early
+- ✅ Subclasses only implement rendering-specific logic
+- ✅ Consistent API across all renderer backends
+- ✅ No need to refactor Material/Geometry later
+
+**Phase 4+ Extension:**
+WebGLRenderer will implement the abstract methods and add WebGL-specific rendering logic without changing the base interface.
+
 ---
 
 ## Phase 1 Implementation Strategy
@@ -383,6 +418,102 @@ The current architecture supports all planned extensions without refactoring.
 ✅ **Resource Safety:** Self-registration + cleanup tracking
 ✅ **Extensible:** New resources follow the same pattern
 ✅ **Debuggable:** GPU query methods catch binding issues
+
+---
+
+## Module Organization & Folder Structure
+
+### Design Principle: Hierarchical Organization
+
+The codebase uses **hierarchical folder structures** to organize related types and communicate architectural intent:
+
+- **Abstract base classes** and their **concrete implementations** are grouped in subdirectories
+- This signals that abstract classes are internal implementation details, not user-facing APIs
+- Only concrete implementations are re-exported from module index files
+
+### Math Module Structure
+
+```
+src/math/
+├── vectors/
+│   ├── Vector.ts              # Abstract base
+│   ├── Vector2.ts, Vector3.ts, Vector4.ts  # Concrete implementations
+├── matrices/
+│   ├── Matrix.ts              # Abstract base
+│   ├── SquareMatrix.ts        # Abstract base
+│   ├── Matrix2.ts, Matrix3.ts, Matrix4.ts  # Concrete implementations
+├── quaternions/
+│   └── Quaternion.ts          # Concrete (no abstract needed)
+└── index.ts                   # Re-exports only concrete implementations
+```
+
+**User API:**
+```typescript
+import { Vector3, Matrix4, Quaternion } from '@webgl/math';  // ✅ User-facing
+// import { Vector, Matrix } from '@webgl/math';  // ❌ Not re-exported
+```
+
+**Internal Cross-Directory Imports:**
+```typescript
+// Matrix2.ts in src/math/matrices/
+import { Vector2 } from '../vectors/Vector2.js';
+```
+
+### Resources Module Structure
+
+```
+src/resources/
+├── buffers/
+│   ├── Buffer.ts              # Abstract base
+│   ├── VertexBuffer.ts        # Concrete
+│   ├── IndexBuffer.ts         # Concrete
+│   └── [6 more specialized buffer types]
+├── Program.ts                 # Single implementation (no subdirectory)
+├── index.ts                   # Re-exports concrete buffer types
+└── (Future: shaders/, textures/, vertexArrays/)
+```
+
+**Why Buffers Get a Subdirectory:**
+- Multiple implementations of the same abstraction (9 types)
+- Clear hierarchy: Buffer base → 8 specialized buffers
+- Justifies dedicated subdirectory
+
+**Why Program Doesn't:**
+- Single implementation in Phase 1
+- Will get a subdirectory if/when multiple Program variants exist
+
+### Benefits of This Structure
+
+| Aspect | Benefit |
+|--------|---------|
+| **Self-Documenting** | Developers immediately see what's public vs. internal |
+| **Prevents Misuse** | Can't accidentally import and extend abstract bases |
+| **Scalable** | Pattern applies consistently across math, resources, and future modules |
+| **Maintainable** | Related code is grouped and easy to locate |
+| **Future-Proof** | Supports adding more types without refactoring |
+
+### Folder Structure Rule
+
+**Create a subdirectory when:** You have multiple implementations of the same abstraction
+- ✅ vectors/ (Vector2, Vector3, Vector4)
+- ✅ matrices/ (Matrix2, Matrix3, Matrix4)
+- ✅ buffers/ (VertexBuffer, IndexBuffer, etc.)
+- ❌ Program.ts (single type—stays at module root)
+
+### Future Module Organization
+
+As the library grows, this pattern extends naturally:
+
+```
+src/
+├── math/ (vectors/, matrices/, quaternions/) ✅
+├── core/ (Canvas, GLContext, WebGLState, Renderer - single types)
+├── resources/ (buffers/ ✅, future: shaders/, textures/, vertexArrays/)
+├── geometry/ (future: primitives/ with Box, Sphere, Plane)
+├── materials/ (future: basics/ with BasicMaterial, PhongMaterial)
+├── scene/ (Object3D, Scene, Mesh - single types)
+└── renderer/ (future: webgl/, canvas/ for backend-specific implementations)
+```
 
 ---
 

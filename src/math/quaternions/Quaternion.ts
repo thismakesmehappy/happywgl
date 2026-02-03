@@ -1,6 +1,6 @@
-import { Vector3 } from './Vector3.js';
-import { Matrix3 } from './Matrix3.js';
-import { Matrix4 } from './Matrix4.js';
+import { Vector3 } from '../vectors/Vector3.js';
+import { Matrix3 } from '../matrices/Matrix3.js';
+import { Matrix4 } from '../matrices/Matrix4.js';
 
 /**
  * Quaternion - A quaternion class for 3D rotations

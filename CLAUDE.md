@@ -1,7 +1,7 @@
 # Claude Development Session Guide
 
 **Project:** WebGL Graphics Library - Educational 3D Rendering Framework
-**Last Updated:** February 1, 2026
+**Last Updated:** February 2, 2026
 **Current Phase:** Phase 1 - Core MVP Implementation
 **Next Infrastructure Improvement:** Phase 2 - Centralized Error Handling System
 
@@ -31,20 +31,24 @@ This file is your **development workflow guide** covering:
 
 ### ✅ Phase 0 - Math Foundation (Complete)
 
+**Module Organization:** Hierarchical structure with subdirectories (vectors/, matrices/, quaternions/)
+
 | Feature | File | Coverage | Tests | Status |
 | --- | --- | --- | --- | --- |
-| Vector (base) | `src/math/Vector.ts` | 99.05% lines / 96.66% branch | 72 | ✅ Complete |
-| Vector2 | `src/math/Vector2.ts` | 100% lines / 100% branch | 32 | ✅ Complete |
-| Vector3 | `src/math/Vector3.ts` | 100% lines / 100% branch | 34 | ✅ Complete |
-| Vector4 | `src/math/Vector4.ts` | 100% lines / 100% branch | 30 | ✅ Complete |
-| Matrix (base) | `src/math/Matrix.ts` | 97.31% lines / 91.42% branch | 116 | ✅ Complete |
-| SquareMatrix | `src/math/SquareMatrix.ts` | 100% lines / 100% branch | 46 | ✅ Complete |
-| Matrix2 | `src/math/Matrix2.ts` | 97.29% lines / 88.88% branch | 69 | ✅ Complete |
-| Matrix3 | `src/math/Matrix3.ts` | 99.21% lines / 94.44% branch | 88 | ✅ Complete |
-| Matrix4 | `src/math/Matrix4.ts` | 99.45% lines / 94.44% branch | 99 | ✅ Complete |
-| Quaternion | `src/math/Quaternion.ts` | 100% lines / 96.51% branch | 232 | ✅ Complete |
+| Vector (base) | `src/math/vectors/Vector.ts` | 99.05% lines / 96.66% branch | 72 | ✅ Complete |
+| Vector2 | `src/math/vectors/Vector2.ts` | 100% lines / 100% branch | 32 | ✅ Complete |
+| Vector3 | `src/math/vectors/Vector3.ts` | 100% lines / 100% branch | 34 | ✅ Complete |
+| Vector4 | `src/math/vectors/Vector4.ts` | 100% lines / 100% branch | 30 | ✅ Complete |
+| Matrix (base) | `src/math/matrices/Matrix.ts` | 97.31% lines / 91.42% branch | 116 | ✅ Complete |
+| SquareMatrix | `src/math/matrices/SquareMatrix.ts` | 100% lines / 100% branch | 46 | ✅ Complete |
+| Matrix2 | `src/math/matrices/Matrix2.ts` | 97.29% lines / 88.88% branch | 69 | ✅ Complete |
+| Matrix3 | `src/math/matrices/Matrix3.ts` | 99.21% lines / 94.44% branch | 88 | ✅ Complete |
+| Matrix4 | `src/math/matrices/Matrix4.ts` | 99.45% lines / 94.44% branch | 99 | ✅ Complete |
+| Quaternion | `src/math/quaternions/Quaternion.ts` | 100% lines / 96.51% branch | 232 | ✅ Complete |
 
 ### 🚧 Phase 1 - Core Rendering (In Progress - Awaiting Review)
+
+**Module Organization:** Hierarchical structure with buffers/ subdirectory for 9 buffer types
 
 | Feature | File | Coverage | Tests | Status |
 | --- | --- | --- | --- | --- |
@@ -53,14 +57,23 @@ This file is your **development workflow guide** covering:
 | GLContext | `src/core/GLContext.ts` | 94.16% lines / 94.44% branch | 150 | 🔍 Implemented, Pending Approval |
 | Canvas | `src/core/Canvas.ts` | 98.92% lines / 95.91% branch | 86 | 🔍 Complete, Pending Approval |
 | Renderer | `src/core/Renderer.ts` | 100% lines / 100% branch | 30 | 🔍 Implemented, Pending Approval |
-| Buffer | `src/resources/Buffer.ts` | 100% lines / 96.82% branch | 78 | ✅ Complete |
+| **Buffer System** | `src/resources/buffers/` | — | — | ✅ Specialized |
+| Buffer (Abstract) | `src/resources/buffers/Buffer.ts` | 89.61% lines / 85.5% branch | — | ✅ Complete |
+| VertexBuffer | `src/resources/buffers/VertexBuffer.ts` | 100% lines / 100% branch | 30 | ✅ Complete |
+| IndexBuffer | `src/resources/buffers/IndexBuffer.ts` | 100% lines / 100% branch | 16 | ✅ Complete |
+| CopyReadBuffer | `src/resources/buffers/CopyReadBuffer.ts` | 0% lines / 0% branch | — | 🚧 Stub |
+| CopyWriteBuffer | `src/resources/buffers/CopyWriteBuffer.ts` | 0% lines / 0% branch | — | 🚧 Stub |
+| PixelPackBuffer | `src/resources/buffers/PixelPackBuffer.ts` | 0% lines / 0% branch | — | 🚧 Stub |
+| PixelUnpackBuffer | `src/resources/buffers/PixelUnpackBuffer.ts` | 0% lines / 0% branch | — | 🚧 Stub |
+| TransformFeedbackBuffer | `src/resources/buffers/TransformFeedbackBuffer.ts` | 0% lines / 0% branch | — | 🚧 Stub |
+| UniformBuffer | `src/resources/buffers/UniformBuffer.ts` | 0% lines / 0% branch | — | 🚧 Stub |
 
 **Overall Project:**
-- Total Tests: 1,306 passing (16 test files)
-- Project Coverage: 98.64% lines / 95.64% branch
+- Total Tests: 1,343 passing (18 test files)
+- Project Coverage: 97.22% lines / 93.08% branch
 - Target Coverage: 95%+ lines / 90%+ branch ✓ **Exceeded**
 
-> **⚠️ Note:** Canvas refactoring is complete with chainable DOM methods (setId, getId, addClass, removeClass, hasClass, appendTo) and responsive sizing (fillWindow, stopFillWindow). All Canvas tests pass with comprehensive coverage including private field verification and edge case handling. Core rendering features (GLContext, Renderer, WebGLState) are awaiting your review and approval. Buffer has been completed and committed. Please review Canvas and remaining implementations and either approve them for commit or request changes.
+> **✅ Module Reorganization Complete:** Math module now organized with vectors/, matrices/, quaternions/ subdirectories. Resources module organized with buffers/ subdirectory for 8 buffer specializations. All 1,343 tests passing. Cross-directory imports updated. User-facing API unchanged—imports still work as `import { Vector3, Matrix4, VertexBuffer } from '@webgl/...'`
 
 ### 🚧 Next Up (Phase 1 Remaining - APPROVED)
 

@@ -94,6 +94,110 @@ buffer.dispose();
 - ❌ Manage which uniforms affect this buffer (that's Material's job)
 - ❌ Manage vertex layout/structure (that's Geometry's job)
 
+#### Buffer Specialization System
+
+WebGL defines 9 distinct buffer target types, each with specific purposes. The Buffer class is abstract, with concrete subclasses for each type:
+
+**Core Buffers (Most Common):**
+
+```typescript
+// Vertex data (most common)
+const vertexBuffer = await VertexBuffer.create(ctx, vertices, BufferUsage.STATIC_DRAW);
+vertexBuffer.bind();
+// Use with glVertexAttribPointer
+
+// Index/Element buffer (element array buffer)
+const indexBuffer = await IndexBuffer.create(ctx, indices, BufferUsage.STATIC_DRAW);
+indexBuffer.bind();
+// Use with glDrawElements
+```
+
+**Copy Operation Buffers:**
+
+```typescript
+// Copy source - read pixels from framebuffer
+const copyRead = await CopyReadBuffer.create(ctx, data);
+copyRead.bind();
+// Use as source in glCopyBufferSubData
+
+// Copy destination - write pixels to framebuffer
+const copyWrite = await CopyWriteBuffer.create(ctx, data);
+copyWrite.bind();
+// Use as destination in glCopyBufferSubData
+```
+
+**Pixel Operation Buffers:**
+
+```typescript
+// Pack buffer - read pixels into buffer (for glReadPixels)
+const pixelPack = await PixelPackBuffer.create(ctx, data);
+pixelPack.bind();
+// Use with glReadPixels(gl.PIXEL_PACK_BUFFER, ...)
+
+// Unpack buffer - write pixels from buffer (for glTexImage2D)
+const pixelUnpack = await PixelUnpackBuffer.create(ctx, data);
+pixelUnpack.bind();
+// Use with glTexImage2D(gl.PIXEL_UNPACK_BUFFER, ...)
+```
+
+**Advanced Buffers:**
+
+```typescript
+// Transform feedback buffer - capture shader output
+const feedback = await TransformFeedbackBuffer.create(ctx, data);
+feedback.bind();
+// Use with glBindBufferBase and transform feedback shaders
+
+// Uniform buffer - share uniforms across shaders
+const uniformBuffer = await UniformBuffer.create(ctx, uniformData);
+uniformBuffer.bind();
+// Use with glBindBufferBase(gl.UNIFORM_BUFFER, ...)
+```
+
+**Buffer Type Differences:**
+
+| Buffer Type | Target | ComponentSize | Primary Use |
+|-------------|--------|---------------|------------|
+| VertexBuffer | ARRAY_BUFFER | ✅ 1-4 | Vertex attributes |
+| IndexBuffer | ELEMENT_ARRAY_BUFFER | ❌ N/A | Element indices |
+| CopyReadBuffer | COPY_READ_BUFFER | N/A | Copy source |
+| CopyWriteBuffer | COPY_WRITE_BUFFER | N/A | Copy destination |
+| PixelPackBuffer | PIXEL_PACK_BUFFER | N/A | Read pixels |
+| PixelUnpackBuffer | PIXEL_UNPACK_BUFFER | N/A | Write pixels |
+| TransformFeedbackBuffer | TRANSFORM_FEEDBACK_BUFFER | N/A | Capture feedback |
+| UniformBuffer | UNIFORM_BUFFER | N/A | Shared uniforms |
+
+**Key Design Decisions:**
+
+1. **Abstract Base + Concrete Types**
+   - `Buffer` (abstract) - shared functionality
+   - 8 concrete types - specialized for each WebGL target
+   - Factory methods on each type: `await VertexBuffer.create(ctx, data, usage)`
+
+2. **ComponentSize (VertexBuffer Only)**
+   - Only VertexBuffer has `componentSize` field
+   - Validates component count (1-4 per WebGL spec)
+   - Other buffer types have no componentSize concept
+   - Type safety ensures correct usage
+
+3. **Async Factory Methods**
+   - Uses dynamic imports to prevent circular dependencies
+   - Returns `Promise<BufferType>` for clean API
+   - Centralizes creation logic
+
+4. **Shared Functionality in Abstract Base**
+   - Bind/unbind behavior
+   - Data upload (setData, updateSubData)
+   - Resource disposal
+   - Static binding tracking (optimization)
+   - GPU state querying
+
+5. **Specialization Signaled by Folder Structure**
+   - All buffers in `src/resources/buffers/`
+   - Folder structure clarifies: these are related types
+   - Abstract base + 8 specializations grouped together
+   - Signals to developers: "Use concrete types, not Buffer abstract base"
+
 ---
 
 ### Shader
