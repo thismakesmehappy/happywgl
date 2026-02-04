@@ -602,4 +602,421 @@ describe('Vector (Base Class)', () => {
       });
     });
   });
+
+  // ============================================================================
+  // Type Checking Methods
+  // ============================================================================
+
+  describe('Type Checking Methods', () => {
+    describe('isFinite()', () => {
+      it('returns true for finite values', () => {
+        expect(new Vector3(1, 2, 3).isFinite()).toBe(true);
+        expect(new Vector3(-1.5, 0, 100.5).isFinite()).toBe(true);
+      });
+
+      it('returns false if any component is NaN', () => {
+        expect(new Vector3(1, NaN, 3).isFinite()).toBe(false);
+        expect(new Vector3(NaN, NaN, NaN).isFinite()).toBe(false);
+      });
+
+      it('returns false if any component is Infinity', () => {
+        expect(new Vector3(1, Infinity, 3).isFinite()).toBe(false);
+        expect(new Vector3(-Infinity, 2, 3).isFinite()).toBe(false);
+      });
+    });
+
+    describe('isInteger()', () => {
+      it('returns true for integer values', () => {
+        expect(new Vector3(1, 2, 3).isInteger()).toBe(true);
+        expect(new Vector3(-1, 0, 100).isInteger()).toBe(true);
+      });
+
+      it('returns false if any component is not an integer', () => {
+        expect(new Vector3(1.5, 2, 3).isInteger()).toBe(false);
+        expect(new Vector3(1, 2.1, 3).isInteger()).toBe(false);
+      });
+
+      it('returns false for NaN or Infinity', () => {
+        expect(new Vector3(1, NaN, 3).isInteger()).toBe(false);
+        expect(new Vector3(1, Infinity, 3).isInteger()).toBe(false);
+      });
+    });
+
+    describe('isUnsignedInteger()', () => {
+      it('returns true for non-negative integer values', () => {
+        expect(new Vector3(0, 1, 2).isUnsignedInteger()).toBe(true);
+        expect(new Vector3(100, 200, 300).isUnsignedInteger()).toBe(true);
+      });
+
+      it('returns false if any component is negative', () => {
+        expect(new Vector3(-1, 2, 3).isUnsignedInteger()).toBe(false);
+        expect(new Vector3(1, -2, 3).isUnsignedInteger()).toBe(false);
+      });
+
+      it('returns false if any component is not an integer', () => {
+        expect(new Vector3(1.5, 2, 3).isUnsignedInteger()).toBe(false);
+      });
+
+      it('returns false for NaN or Infinity', () => {
+        expect(new Vector3(1, NaN, 3).isUnsignedInteger()).toBe(false);
+        expect(new Vector3(1, Infinity, 3).isUnsignedInteger()).toBe(false);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Rounding Methods
+  // ============================================================================
+
+  describe('Rounding Methods', () => {
+    describe('truncate()', () => {
+      it('truncates positive values toward zero', () => {
+        const v = new Vector3(1.7, 2.3, 3.9);
+        v.truncate();
+        expect(v.x).toBe(1);
+        expect(v.y).toBe(2);
+        expect(v.z).toBe(3);
+      });
+
+      it('truncates negative values toward zero', () => {
+        const v = new Vector3(-1.7, -2.3, -3.9);
+        v.truncate();
+        expect(v.x).toBe(-1);
+        expect(v.y).toBe(-2);
+        expect(v.z).toBe(-3);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(1.5, 2.5, 3.5);
+        expect(v.truncate()).toBe(v);
+      });
+
+      it('throws for NaN', () => {
+        const v = new Vector3(1, NaN, 3);
+        expect(() => v.truncate()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const v = new Vector3(1, Infinity, 3);
+        expect(() => v.truncate()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.7, 2.3, 3.9);
+        const result = Vector.truncate(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(1);
+        expect(v.x).toBeCloseTo(1.7, 5); // Original unchanged
+      });
+    });
+
+    describe('floor()', () => {
+      it('floors positive values toward negative infinity', () => {
+        const v = new Vector3(1.7, 2.3, 3.9);
+        v.floor();
+        expect(v.x).toBe(1);
+        expect(v.y).toBe(2);
+        expect(v.z).toBe(3);
+      });
+
+      it('floors negative values toward negative infinity', () => {
+        const v = new Vector3(-1.1, -2.5, -3.9);
+        v.floor();
+        expect(v.x).toBe(-2);
+        expect(v.y).toBe(-3);
+        expect(v.z).toBe(-4);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(1.5, 2.5, 3.5);
+        expect(v.floor()).toBe(v);
+      });
+
+      it('throws for NaN', () => {
+        const v = new Vector3(1, NaN, 3);
+        expect(() => v.floor()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.7, -2.3, 3.9);
+        const result = Vector.floor(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(1);
+        expect(result.y).toBe(-3);
+        expect(v.y).toBeCloseTo(-2.3, 5); // Original unchanged
+      });
+    });
+
+    describe('ceil()', () => {
+      it('ceils positive values toward positive infinity', () => {
+        const v = new Vector3(1.1, 2.5, 3.9);
+        v.ceil();
+        expect(v.x).toBe(2);
+        expect(v.y).toBe(3);
+        expect(v.z).toBe(4);
+      });
+
+      it('ceils negative values toward positive infinity', () => {
+        const v = new Vector3(-1.1, -2.5, -3.9);
+        v.ceil();
+        expect(v.x).toBe(-1);
+        expect(v.y).toBe(-2);
+        expect(v.z).toBe(-3);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(1.5, 2.5, 3.5);
+        expect(v.ceil()).toBe(v);
+      });
+
+      it('throws for Infinity', () => {
+        const v = new Vector3(1, -Infinity, 3);
+        expect(() => v.ceil()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.1, -2.3, 3.9);
+        const result = Vector.ceil(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(2);
+        expect(result.y).toBe(-2);
+        expect(v.x).toBeCloseTo(1.1, 5); // Original unchanged
+      });
+    });
+
+    describe('round()', () => {
+      it('rounds to nearest integer (0.5 rounds up)', () => {
+        const v = new Vector3(1.4, 2.5, 3.6);
+        v.round();
+        expect(v.x).toBe(1);
+        expect(v.y).toBe(3);
+        expect(v.z).toBe(4);
+      });
+
+      it('rounds negative values', () => {
+        const v = new Vector3(-1.4, -2.5, -3.6);
+        v.round();
+        expect(v.x).toBe(-1);
+        expect(v.y).toBe(-2);
+        expect(v.z).toBe(-4);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(1.5, 2.5, 3.5);
+        expect(v.round()).toBe(v);
+      });
+
+      it('throws for NaN', () => {
+        const v = new Vector3(NaN, 2, 3);
+        expect(() => v.round()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.4, 2.5, 3.6);
+        const result = Vector.round(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(1);
+        expect(result.y).toBe(3);
+        expect(v.x).toBeCloseTo(1.4, 5); // Original unchanged
+      });
+    });
+
+    describe('expand()', () => {
+      it('expands positive values away from zero (ceil)', () => {
+        const v = new Vector3(1.1, 2.5, 3.9);
+        v.expand();
+        expect(v.x).toBe(2);
+        expect(v.y).toBe(3);
+        expect(v.z).toBe(4);
+      });
+
+      it('expands negative values away from zero (floor)', () => {
+        const v = new Vector3(-1.1, -2.5, -3.9);
+        v.expand();
+        expect(v.x).toBe(-2);
+        expect(v.y).toBe(-3);
+        expect(v.z).toBe(-4);
+      });
+
+      it('zero stays zero', () => {
+        const v = new Vector3(0, 0, 0);
+        v.expand();
+        expect(v.x).toBe(0);
+        expect(v.y).toBe(0);
+        expect(v.z).toBe(0);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(1.5, -2.5, 3.5);
+        expect(v.expand()).toBe(v);
+      });
+
+      it('throws for non-finite values', () => {
+        const v = new Vector3(1, Infinity, 3);
+        expect(() => v.expand()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.1, -2.1, 0);
+        const result = Vector.expand(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(2);
+        expect(result.y).toBe(-3);
+        expect(result.z).toBe(0);
+        expect(v.x).toBeCloseTo(1.1, 5); // Original unchanged
+      });
+    });
+  });
+
+  // ============================================================================
+  // Clamping Methods
+  // ============================================================================
+
+  describe('Clamping Methods', () => {
+    describe('clampNonNegative()', () => {
+      it('keeps positive values unchanged', () => {
+        const v = new Vector3(1.5, 2.5, 3.5);
+        v.clampNonNegative();
+        expect(v.x).toBe(1.5);
+        expect(v.y).toBe(2.5);
+        expect(v.z).toBe(3.5);
+      });
+
+      it('clamps negative values to zero', () => {
+        const v = new Vector3(-1.5, -2.5, -3.5);
+        v.clampNonNegative();
+        expect(v.x).toBe(0);
+        expect(v.y).toBe(0);
+        expect(v.z).toBe(0);
+      });
+
+      it('handles mixed values', () => {
+        const v = new Vector3(1.5, -2.5, 3.5);
+        v.clampNonNegative();
+        expect(v.x).toBe(1.5);
+        expect(v.y).toBe(0);
+        expect(v.z).toBe(3.5);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(-1, 2, -3);
+        expect(v.clampNonNegative()).toBe(v);
+      });
+
+      it('throws for non-finite values', () => {
+        const v = new Vector3(1, NaN, 3);
+        expect(() => v.clampNonNegative()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.5, -2.5, 3.5);
+        const result = Vector.clampNonNegative(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(1.5);
+        expect(result.y).toBe(0);
+        expect(v.y).toBe(-2.5); // Original unchanged
+      });
+    });
+  });
+
+  // ============================================================================
+  // Integer Conversion Methods
+  // ============================================================================
+
+  describe('Integer Conversion Methods', () => {
+    describe('toInt()', () => {
+      it('truncates to integers', () => {
+        const v = new Vector3(1.7, -2.3, 3.9);
+        v.toInt();
+        expect(v.x).toBe(1);
+        expect(v.y).toBe(-2);
+        expect(v.z).toBe(3);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(1.5, 2.5, 3.5);
+        expect(v.toInt()).toBe(v);
+      });
+
+      it('throws for NaN', () => {
+        const v = new Vector3(1, NaN, 3);
+        expect(() => v.toInt()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const v = new Vector3(1, Infinity, 3);
+        expect(() => v.toInt()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.7, -2.3, 3.9);
+        const result = Vector.toInt(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(1);
+        expect(result.y).toBe(-2);
+        expect(v.x).toBeCloseTo(1.7, 5); // Original unchanged
+      });
+    });
+
+    describe('toUint()', () => {
+      it('clamps negatives to 0 and truncates', () => {
+        const v = new Vector3(1.7, -2.3, 3.9);
+        v.toUint();
+        expect(v.x).toBe(1);
+        expect(v.y).toBe(0);
+        expect(v.z).toBe(3);
+      });
+
+      it('handles all negative values', () => {
+        const v = new Vector3(-1.7, -2.3, -3.9);
+        v.toUint();
+        expect(v.x).toBe(0);
+        expect(v.y).toBe(0);
+        expect(v.z).toBe(0);
+      });
+
+      it('returns this for chaining', () => {
+        const v = new Vector3(1.5, -2.5, 3.5);
+        expect(v.toUint()).toBe(v);
+      });
+
+      it('throws for NaN', () => {
+        const v = new Vector3(1, NaN, 3);
+        expect(() => v.toUint()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const v = new Vector3(1, -Infinity, 3);
+        expect(() => v.toUint()).toThrow('non-finite');
+      });
+
+      it('static version returns new vector', () => {
+        const v = new Vector3(1.7, -2.3, 3.9);
+        const result = Vector.toUint(v);
+        expect(result).not.toBe(v);
+        expect(result.x).toBe(1);
+        expect(result.y).toBe(0);
+        expect(v.y).toBeCloseTo(-2.3, 5); // Original unchanged
+      });
+    });
+
+    describe('chaining rounding methods', () => {
+      it('supports chaining multiple operations', () => {
+        const v = new Vector3(1.7, -2.3, 3.9);
+        const result = v.clone().clampNonNegative().floor();
+        expect(result.x).toBe(1);
+        expect(result.y).toBe(0);
+        expect(result.z).toBe(3);
+      });
+
+      it('can use alternative rounding with toUint pattern', () => {
+        // User wants ceil instead of truncate for uint
+        const v = new Vector3(1.1, -2.3, 3.9);
+        v.clampNonNegative().ceil();
+        expect(v.x).toBe(2);
+        expect(v.y).toBe(0);
+        expect(v.z).toBe(4);
+      });
+    });
+  });
 });

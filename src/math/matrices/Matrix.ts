@@ -690,4 +690,335 @@ export abstract class Matrix {
     }
     return true;
   }
+
+  /**
+   * Validates that all elements are finite numbers
+   * Throws an error if any element is NaN or Infinity
+   * @internal
+   */
+  protected _validateFinite(methodName: string): void {
+    if (!this.isFinite()) {
+      const nonFinite = Array.from(this._elements).filter(e => !Number.isFinite(e));
+      throw new Error(
+        `${methodName}(): matrix contains non-finite values (${nonFinite.join(', ')})`
+      );
+    }
+  }
+
+  // ============================================================================
+  // Type Checking Methods
+  // ============================================================================
+  // These methods check the numeric properties of matrix elements.
+  // Useful for validating data before passing to WebGL integer uniforms.
+
+  /**
+   * Checks if all elements are finite numbers (not NaN or Infinity)
+   *
+   * @returns True if all elements are finite, false otherwise
+   *
+   * @example
+   * new Matrix2(1, 2, 3, 4).isFinite();        // true
+   * new Matrix2(1, NaN, 3, 4).isFinite();      // false
+   * new Matrix2(1, Infinity, 3, 4).isFinite(); // false
+   */
+  isFinite(): boolean {
+    return this._elements.every(e => Number.isFinite(e));
+  }
+
+  /**
+   * Checks if all elements are integers
+   *
+   * @returns True if all elements are integers, false otherwise
+   *
+   * @example
+   * new Matrix2(1, 2, 3, 4).isInteger();     // true
+   * new Matrix2(1.5, 2, 3, 4).isInteger();   // false
+   */
+  isInteger(): boolean {
+    return this._elements.every(e => Number.isInteger(e));
+  }
+
+  /**
+   * Checks if all elements are non-negative integers (valid for unsigned int)
+   *
+   * @returns True if all elements are non-negative integers, false otherwise
+   *
+   * @example
+   * new Matrix2(1, 2, 3, 4).isUnsignedInteger();   // true
+   * new Matrix2(-1, 2, 3, 4).isUnsignedInteger();  // false
+   * new Matrix2(1.5, 2, 3, 4).isUnsignedInteger(); // false
+   */
+  isUnsignedInteger(): boolean {
+    return this._elements.every(e => Number.isInteger(e) && e >= 0);
+  }
+
+  // ============================================================================
+  // Rounding Methods
+  // ============================================================================
+  // These methods convert floating-point elements to integers using different
+  // rounding strategies. All methods validate that values are finite first.
+  //
+  // WebGL silently converts floats to integers using truncation, which can cause
+  // subtle bugs. These methods make the conversion explicit and safe.
+
+  /**
+   * Truncates all elements toward zero (MUTATING)
+   *
+   * This is the default JavaScript/WebGL behavior for float-to-int conversion.
+   * - 3.7 → 3
+   * - -3.7 → -3
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * new Matrix2(1.7, -2.3, 3.9, -4.1).truncate(); // (1, -2, 3, -4)
+   */
+  truncate(): this {
+    this._validateFinite('truncate');
+    for (let i = 0; i < this._elements.length; i++) {
+      this._elements[i] = Math.trunc(this._elements[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Truncates all elements and returns a new matrix
+   *
+   * @param m - The matrix to truncate
+   * @returns New matrix with truncated values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static truncate<T extends Matrix>(m: T): T {
+    return m.clone().truncate();
+  }
+
+  /**
+   * Floors all elements toward negative infinity (MUTATING)
+   *
+   * Useful for grid/tile coordinates where you want consistent rounding down.
+   * - 3.7 → 3
+   * - -3.7 → -4
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * new Matrix2(1.7, -2.3, 3.9, -4.1).floor(); // (1, -3, 3, -5)
+   */
+  floor(): this {
+    this._validateFinite('floor');
+    for (let i = 0; i < this._elements.length; i++) {
+      this._elements[i] = Math.floor(this._elements[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Floors all elements and returns a new matrix
+   *
+   * @param m - The matrix to floor
+   * @returns New matrix with floored values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static floor<T extends Matrix>(m: T): T {
+    return m.clone().floor();
+  }
+
+  /**
+   * Ceils all elements toward positive infinity (MUTATING)
+   *
+   * Useful for size calculations where you want to round up.
+   * - 3.1 → 4
+   * - -3.7 → -3
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * new Matrix2(1.1, -2.3, 3.9, -4.1).ceil(); // (2, -2, 4, -4)
+   */
+  ceil(): this {
+    this._validateFinite('ceil');
+    for (let i = 0; i < this._elements.length; i++) {
+      this._elements[i] = Math.ceil(this._elements[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Ceils all elements and returns a new matrix
+   *
+   * @param m - The matrix to ceil
+   * @returns New matrix with ceiled values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static ceil<T extends Matrix>(m: T): T {
+    return m.clone().ceil();
+  }
+
+  /**
+   * Rounds all elements to nearest integer (MUTATING)
+   *
+   * Standard rounding: 0.5 rounds up.
+   * - 3.4 → 3
+   * - 3.5 → 4
+   * - -3.5 → -3
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * new Matrix2(1.4, 2.5, -3.5, 4.6).round(); // (1, 3, -3, 5)
+   */
+  round(): this {
+    this._validateFinite('round');
+    for (let i = 0; i < this._elements.length; i++) {
+      this._elements[i] = Math.round(this._elements[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Rounds all elements and returns a new matrix
+   *
+   * @param m - The matrix to round
+   * @returns New matrix with rounded values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static round<T extends Matrix>(m: T): T {
+    return m.clone().round();
+  }
+
+  /**
+   * Expands all elements away from zero (MUTATING)
+   *
+   * Negative values are floored, positive values are ceiled.
+   * Useful when you want to ensure you never underestimate magnitude.
+   * - 3.1 → 4
+   * - -3.1 → -4
+   * - 0 → 0
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * new Matrix2(1.1, -2.1, 0, 3.9).expand(); // (2, -3, 0, 4)
+   */
+  expand(): this {
+    this._validateFinite('expand');
+    for (let i = 0; i < this._elements.length; i++) {
+      const e = this._elements[i]!;
+      this._elements[i] = e >= 0 ? Math.ceil(e) : Math.floor(e);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Expands all elements away from zero and returns a new matrix
+   *
+   * @param m - The matrix to expand
+   * @returns New matrix with expanded values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static expand<T extends Matrix>(m: T): T {
+    return m.clone().expand();
+  }
+
+  // ============================================================================
+  // Clamping Methods
+  // ============================================================================
+
+  /**
+   * Clamps all elements to be non-negative (MUTATING)
+   *
+   * Negative values become 0. Does not round - use with a rounding method.
+   * - 3.5 → 3.5
+   * - -3.5 → 0
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * new Matrix2(1.5, -2.5, 3.5, -4.5).clampNonNegative(); // (1.5, 0, 3.5, 0)
+   */
+  clampNonNegative(): this {
+    this._validateFinite('clampNonNegative');
+    for (let i = 0; i < this._elements.length; i++) {
+      this._elements[i] = Math.max(0, this._elements[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Clamps all elements to be non-negative and returns a new matrix
+   *
+   * @param m - The matrix to clamp
+   * @returns New matrix with clamped values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static clampNonNegative<T extends Matrix>(m: T): T {
+    return m.clone().clampNonNegative();
+  }
+
+  // ============================================================================
+  // Integer Conversion Methods
+  // ============================================================================
+  // Convenience methods for preparing matrices for WebGL integer uniforms.
+
+  /**
+   * Converts this matrix to integers for use with int uniforms (MUTATING)
+   *
+   * This method validates all values are finite, then truncates to integers.
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * const m = new Matrix2(1.7, -2.3, 3.9, -4.1);
+   * m.toInt(); // (1, -2, 3, -4)
+   */
+  toInt(): this {
+    return this.truncate();
+  }
+
+  /**
+   * Static method: Converts a matrix to integers and returns a new matrix
+   *
+   * @param m - The matrix to convert
+   * @returns New matrix with integer values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static toInt<T extends Matrix>(m: T): T {
+    return m.clone().toInt();
+  }
+
+  /**
+   * Converts this matrix to unsigned integers for use with uint uniforms (MUTATING)
+   *
+   * This method validates all values are finite, clamps negatives to 0,
+   * then truncates to integers.
+   *
+   * @returns This matrix (for chaining)
+   * @throws Error if any element is NaN or Infinity
+   *
+   * @example
+   * const m = new Matrix2(1.7, -2.3, 3.9, -4.1);
+   * m.toUint(); // (1, 0, 3, 0)
+   */
+  toUint(): this {
+    this._validateFinite('toUint');
+    return this.clampNonNegative().truncate();
+  }
+
+  /**
+   * Static method: Converts a matrix to unsigned integers and returns a new matrix
+   *
+   * @param m - The matrix to convert
+   * @returns New matrix with unsigned integer values (same type as m)
+   * @throws Error if any element is NaN or Infinity
+   */
+  static toUint<T extends Matrix>(m: T): T {
+    return m.clone().toUint();
+  }
 }

@@ -938,4 +938,461 @@ describe('Matrix (Base Class)', () => {
       expect(() => Matrix.transpose(m)).toThrow('Matrix elements array size mismatch: expected 4 elements (2x2) for MatrixB, got');
     });
   });
+
+  // ============================================================================
+  // Type Checking Methods
+  // ============================================================================
+
+  describe('Type Checking Methods', () => {
+    describe('isFinite()', () => {
+      it('returns true for finite values', () => {
+        const m = new TestMatrix2x2(1.5, -2.5, 3.5, -4.5);
+        expect(m.isFinite()).toBe(true);
+      });
+
+      it('returns false if any element is NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(m.isFinite()).toBe(false);
+      });
+
+      it('returns false if any element is Infinity', () => {
+        const m = new TestMatrix2x2(1, Infinity, 3, 4);
+        expect(m.isFinite()).toBe(false);
+      });
+
+      it('returns false if any element is -Infinity', () => {
+        const m = new TestMatrix2x2(1, -Infinity, 3, 4);
+        expect(m.isFinite()).toBe(false);
+      });
+    });
+
+    describe('isInteger()', () => {
+      it('returns true for integer values', () => {
+        const m = new TestMatrix2x2(1, 2, 3, 4);
+        expect(m.isInteger()).toBe(true);
+      });
+
+      it('returns false if any element is not an integer', () => {
+        const m = new TestMatrix2x2(1, 2.5, 3, 4);
+        expect(m.isInteger()).toBe(false);
+      });
+
+      it('returns false for NaN or Infinity', () => {
+        expect(new TestMatrix2x2(1, NaN, 3, 4).isInteger()).toBe(false);
+        expect(new TestMatrix2x2(1, Infinity, 3, 4).isInteger()).toBe(false);
+      });
+    });
+
+    describe('isUnsignedInteger()', () => {
+      it('returns true for non-negative integer values', () => {
+        const m = new TestMatrix2x2(0, 1, 2, 3);
+        expect(m.isUnsignedInteger()).toBe(true);
+      });
+
+      it('returns false if any element is negative', () => {
+        const m = new TestMatrix2x2(1, -2, 3, 4);
+        expect(m.isUnsignedInteger()).toBe(false);
+      });
+
+      it('returns false if any element is not an integer', () => {
+        const m = new TestMatrix2x2(1, 2.5, 3, 4);
+        expect(m.isUnsignedInteger()).toBe(false);
+      });
+
+      it('returns false for NaN or Infinity', () => {
+        expect(new TestMatrix2x2(1, NaN, 3, 4).isUnsignedInteger()).toBe(false);
+        expect(new TestMatrix2x2(1, Infinity, 3, 4).isUnsignedInteger()).toBe(false);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Rounding Methods
+  // ============================================================================
+
+  describe('Rounding Methods', () => {
+    describe('truncate()', () => {
+      it('truncates positive values toward zero', () => {
+        const m = new TestMatrix2x2(1.7, 2.3, 3.9, 4.1);
+        m.truncate();
+        expect(m.get(0, 0)).toBe(1);
+        expect(m.get(0, 1)).toBe(2);
+        expect(m.get(1, 0)).toBe(3);
+        expect(m.get(1, 1)).toBe(4);
+      });
+
+      it('truncates negative values toward zero', () => {
+        const m = new TestMatrix2x2(-1.7, -2.3, -3.9, -4.1);
+        m.truncate();
+        expect(m.get(0, 0)).toBe(-1);
+        expect(m.get(0, 1)).toBe(-2);
+        expect(m.get(1, 0)).toBe(-3);
+        expect(m.get(1, 1)).toBe(-4);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, 2.5, 3.5, 4.5);
+        expect(m.truncate()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.truncate()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, Infinity, 3, 4);
+        expect(() => m.truncate()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        const result = Matrix.truncate(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBe(1);
+        expect(result.get(0, 1)).toBe(-2);
+        expect(m.get(0, 0)).toBeCloseTo(1.7, 5); // Original unchanged
+      });
+    });
+
+    describe('floor()', () => {
+      it('floors positive values toward negative infinity', () => {
+        const m = new TestMatrix2x2(1.7, 2.3, 3.9, 4.1);
+        m.floor();
+        expect(m.get(0, 0)).toBe(1);
+        expect(m.get(0, 1)).toBe(2);
+        expect(m.get(1, 0)).toBe(3);
+        expect(m.get(1, 1)).toBe(4);
+      });
+
+      it('floors negative values toward negative infinity', () => {
+        const m = new TestMatrix2x2(-1.7, -2.3, -3.9, -4.1);
+        m.floor();
+        expect(m.get(0, 0)).toBe(-2);
+        expect(m.get(0, 1)).toBe(-3);
+        expect(m.get(1, 0)).toBe(-4);
+        expect(m.get(1, 1)).toBe(-5);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, 2.5, 3.5, 4.5);
+        expect(m.floor()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.floor()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, Infinity, 3, 4);
+        expect(() => m.floor()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        const result = Matrix.floor(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBe(1);
+        expect(result.get(0, 1)).toBe(-3);
+        expect(m.get(0, 1)).toBeCloseTo(-2.3, 5); // Original unchanged
+      });
+    });
+
+    describe('ceil()', () => {
+      it('ceils positive values toward positive infinity', () => {
+        const m = new TestMatrix2x2(1.1, 2.3, 3.9, 4.1);
+        m.ceil();
+        expect(m.get(0, 0)).toBe(2);
+        expect(m.get(0, 1)).toBe(3);
+        expect(m.get(1, 0)).toBe(4);
+        expect(m.get(1, 1)).toBe(5);
+      });
+
+      it('ceils negative values toward positive infinity', () => {
+        const m = new TestMatrix2x2(-1.7, -2.3, -3.9, -4.1);
+        m.ceil();
+        expect(m.get(0, 0)).toBe(-1);
+        expect(m.get(0, 1)).toBe(-2);
+        expect(m.get(1, 0)).toBe(-3);
+        expect(m.get(1, 1)).toBe(-4);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, 2.5, 3.5, 4.5);
+        expect(m.ceil()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.ceil()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, Infinity, 3, 4);
+        expect(() => m.ceil()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.1, -2.3, 3.9, -4.1);
+        const result = Matrix.ceil(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBe(2);
+        expect(result.get(0, 1)).toBe(-2);
+        expect(m.get(0, 0)).toBeCloseTo(1.1, 5); // Original unchanged
+      });
+    });
+
+    describe('round()', () => {
+      it('rounds to nearest integer', () => {
+        const m = new TestMatrix2x2(1.4, 2.5, 3.6, 4.4);
+        m.round();
+        expect(m.get(0, 0)).toBe(1);
+        expect(m.get(0, 1)).toBe(3); // 2.5 rounds up
+        expect(m.get(1, 0)).toBe(4);
+        expect(m.get(1, 1)).toBe(4);
+      });
+
+      it('rounds negative values', () => {
+        const m = new TestMatrix2x2(-1.4, -2.5, -3.6, -4.4);
+        m.round();
+        expect(m.get(0, 0)).toBe(-1);
+        expect(m.get(0, 1)).toBe(-2); // -2.5 rounds toward positive
+        expect(m.get(1, 0)).toBe(-4);
+        expect(m.get(1, 1)).toBe(-4);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, 2.5, 3.5, 4.5);
+        expect(m.round()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.round()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, Infinity, 3, 4);
+        expect(() => m.round()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.4, 2.5, -3.5, 4.6);
+        const result = Matrix.round(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBe(1);
+        expect(result.get(0, 1)).toBe(3);
+        expect(m.get(0, 0)).toBeCloseTo(1.4, 5); // Original unchanged
+      });
+    });
+
+    describe('expand()', () => {
+      it('expands positive values away from zero (ceil)', () => {
+        const m = new TestMatrix2x2(1.1, 2.1, 3.1, 4.1);
+        m.expand();
+        expect(m.get(0, 0)).toBe(2);
+        expect(m.get(0, 1)).toBe(3);
+        expect(m.get(1, 0)).toBe(4);
+        expect(m.get(1, 1)).toBe(5);
+      });
+
+      it('expands negative values away from zero (floor)', () => {
+        const m = new TestMatrix2x2(-1.1, -2.1, -3.1, -4.1);
+        m.expand();
+        expect(m.get(0, 0)).toBe(-2);
+        expect(m.get(0, 1)).toBe(-3);
+        expect(m.get(1, 0)).toBe(-4);
+        expect(m.get(1, 1)).toBe(-5);
+      });
+
+      it('handles zero', () => {
+        const m = new TestMatrix2x2(0, 1.1, -1.1, 0);
+        m.expand();
+        expect(m.get(0, 0)).toBe(0);
+        expect(m.get(0, 1)).toBe(2);
+        expect(m.get(1, 0)).toBe(-2);
+        expect(m.get(1, 1)).toBe(0);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, 2.5, 3.5, 4.5);
+        expect(m.expand()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.expand()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, Infinity, 3, 4);
+        expect(() => m.expand()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.1, -2.1, 0, 3.9);
+        const result = Matrix.expand(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBe(2);
+        expect(result.get(0, 1)).toBe(-3);
+        expect(result.get(1, 0)).toBe(0);
+        expect(m.get(0, 0)).toBeCloseTo(1.1, 5); // Original unchanged
+      });
+    });
+  });
+
+  // ============================================================================
+  // Clamping Methods
+  // ============================================================================
+
+  describe('Clamping Methods', () => {
+    describe('clampNonNegative()', () => {
+      it('keeps positive values unchanged', () => {
+        const m = new TestMatrix2x2(1.5, 2.5, 3.5, 4.5);
+        m.clampNonNegative();
+        expect(m.get(0, 0)).toBeCloseTo(1.5, 5);
+        expect(m.get(0, 1)).toBeCloseTo(2.5, 5);
+      });
+
+      it('clamps negative values to 0', () => {
+        const m = new TestMatrix2x2(-1.5, -2.5, 3.5, -4.5);
+        m.clampNonNegative();
+        expect(m.get(0, 0)).toBe(0);
+        expect(m.get(0, 1)).toBe(0);
+        expect(m.get(1, 0)).toBeCloseTo(3.5, 5);
+        expect(m.get(1, 1)).toBe(0);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, -2.5, 3.5, -4.5);
+        expect(m.clampNonNegative()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.clampNonNegative()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, -Infinity, 3, 4);
+        expect(() => m.clampNonNegative()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.5, -2.5, 3.5, -4.5);
+        const result = Matrix.clampNonNegative(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBeCloseTo(1.5, 5);
+        expect(result.get(0, 1)).toBe(0);
+        expect(m.get(0, 1)).toBeCloseTo(-2.5, 5); // Original unchanged
+      });
+    });
+  });
+
+  // ============================================================================
+  // Integer Conversion Methods
+  // ============================================================================
+
+  describe('Integer Conversion Methods', () => {
+    describe('toInt()', () => {
+      it('truncates to integers', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        m.toInt();
+        expect(m.get(0, 0)).toBe(1);
+        expect(m.get(0, 1)).toBe(-2);
+        expect(m.get(1, 0)).toBe(3);
+        expect(m.get(1, 1)).toBe(-4);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, -2.5, 3.5, -4.5);
+        expect(m.toInt()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.toInt()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, -Infinity, 3, 4);
+        expect(() => m.toInt()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        const result = Matrix.toInt(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBe(1);
+        expect(result.get(0, 1)).toBe(-2);
+        expect(m.get(0, 0)).toBeCloseTo(1.7, 5); // Original unchanged
+      });
+    });
+
+    describe('toUint()', () => {
+      it('clamps negatives to 0 and truncates', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        m.toUint();
+        expect(m.get(0, 0)).toBe(1);
+        expect(m.get(0, 1)).toBe(0);
+        expect(m.get(1, 0)).toBe(3);
+        expect(m.get(1, 1)).toBe(0);
+      });
+
+      it('handles all negative values', () => {
+        const m = new TestMatrix2x2(-1.7, -2.3, -3.9, -4.1);
+        m.toUint();
+        expect(m.get(0, 0)).toBe(0);
+        expect(m.get(0, 1)).toBe(0);
+        expect(m.get(1, 0)).toBe(0);
+        expect(m.get(1, 1)).toBe(0);
+      });
+
+      it('returns this for chaining', () => {
+        const m = new TestMatrix2x2(1.5, -2.5, 3.5, -4.5);
+        expect(m.toUint()).toBe(m);
+      });
+
+      it('throws for NaN', () => {
+        const m = new TestMatrix2x2(1, NaN, 3, 4);
+        expect(() => m.toUint()).toThrow('non-finite');
+      });
+
+      it('throws for Infinity', () => {
+        const m = new TestMatrix2x2(1, -Infinity, 3, 4);
+        expect(() => m.toUint()).toThrow('non-finite');
+      });
+
+      it('static version returns new matrix', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        const result = Matrix.toUint(m);
+        expect(result).not.toBe(m);
+        expect(result.get(0, 0)).toBe(1);
+        expect(result.get(0, 1)).toBe(0);
+        expect(m.get(0, 1)).toBeCloseTo(-2.3, 5); // Original unchanged
+      });
+    });
+
+    describe('chaining rounding methods', () => {
+      it('supports chaining multiple operations', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        const result = m.clone().clampNonNegative().floor();
+        expect(result.get(0, 0)).toBe(1);
+        expect(result.get(0, 1)).toBe(0);
+        expect(result.get(1, 0)).toBe(3);
+        expect(result.get(1, 1)).toBe(0);
+      });
+
+      it('can use alternative rounding with toUint pattern', () => {
+        const m = new TestMatrix2x2(1.7, -2.3, 3.9, -4.1);
+        // Round instead of truncate
+        const result = m.clone().clampNonNegative().round();
+        expect(result.get(0, 0)).toBe(2); // 1.7 rounds to 2
+        expect(result.get(0, 1)).toBe(0); // -2.3 clamped to 0
+        expect(result.get(1, 0)).toBe(4); // 3.9 rounds to 4
+        expect(result.get(1, 1)).toBe(0); // -4.1 clamped to 0
+      });
+    });
+  });
 });

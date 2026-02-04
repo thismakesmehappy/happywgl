@@ -651,4 +651,339 @@ export abstract class Vector {
       );
     }
   }
+
+  /**
+   * Validates that all components are finite numbers
+   * Throws an error if any component is NaN or Infinity
+   * @internal
+   */
+  protected _validateFinite(methodName: string): void {
+    if (!this.isFinite()) {
+      const nonFinite = this._components.filter(c => !Number.isFinite(c));
+      throw new Error(
+        `${methodName}(): vector contains non-finite values (${nonFinite.join(', ')})`
+      );
+    }
+  }
+
+  // ============================================================================
+  // Type Checking Methods
+  // ============================================================================
+  // These methods check the numeric properties of vector components.
+  // Useful for validating data before passing to WebGL integer uniforms.
+
+  /**
+   * Checks if all components are finite numbers (not NaN or Infinity)
+   *
+   * @returns True if all components are finite, false otherwise
+   *
+   * @example
+   * new Vector3(1, 2, 3).isFinite();        // true
+   * new Vector3(1, NaN, 3).isFinite();      // false
+   * new Vector3(1, Infinity, 3).isFinite(); // false
+   */
+  isFinite(): boolean {
+    return this._components.every(c => Number.isFinite(c));
+  }
+
+  /**
+   * Checks if all components are integers
+   *
+   * @returns True if all components are integers, false otherwise
+   *
+   * @example
+   * new Vector3(1, 2, 3).isInteger();     // true
+   * new Vector3(1.5, 2, 3).isInteger();   // false
+   */
+  isInteger(): boolean {
+    return this._components.every(c => Number.isInteger(c));
+  }
+
+  /**
+   * Checks if all components are non-negative integers (valid for unsigned int)
+   *
+   * @returns True if all components are non-negative integers, false otherwise
+   *
+   * @example
+   * new Vector3(1, 2, 3).isUnsignedInteger();   // true
+   * new Vector3(-1, 2, 3).isUnsignedInteger();  // false
+   * new Vector3(1.5, 2, 3).isUnsignedInteger(); // false
+   */
+  isUnsignedInteger(): boolean {
+    return this._components.every(c => Number.isInteger(c) && c >= 0);
+  }
+
+  // ============================================================================
+  // Rounding Methods
+  // ============================================================================
+  // These methods convert floating-point components to integers using different
+  // rounding strategies. All methods validate that values are finite first.
+  //
+  // WebGL silently converts floats to integers using truncation, which can cause
+  // subtle bugs. These methods make the conversion explicit and safe.
+
+  /**
+   * Truncates all components toward zero (MUTATING)
+   *
+   * This is the default JavaScript/WebGL behavior for float-to-int conversion.
+   * - 3.7 → 3
+   * - -3.7 → -3
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * new Vector3(1.7, -2.3, 3.9).truncate(); // (1, -2, 3)
+   */
+  truncate(): this {
+    this._validateFinite('truncate');
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = Math.trunc(this._components[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Truncates all components and returns a new vector
+   *
+   * @param v - The vector to truncate
+   * @returns New vector with truncated values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static truncate<T extends Vector>(v: T): T {
+    return v.clone().truncate();
+  }
+
+  /**
+   * Floors all components toward negative infinity (MUTATING)
+   *
+   * Useful for grid/tile coordinates where you want consistent rounding down.
+   * - 3.7 → 3
+   * - -3.7 → -4
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * new Vector3(1.7, -2.3, 3.9).floor(); // (1, -3, 3)
+   */
+  floor(): this {
+    this._validateFinite('floor');
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = Math.floor(this._components[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Floors all components and returns a new vector
+   *
+   * @param v - The vector to floor
+   * @returns New vector with floored values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static floor<T extends Vector>(v: T): T {
+    return v.clone().floor();
+  }
+
+  /**
+   * Ceils all components toward positive infinity (MUTATING)
+   *
+   * Useful for size calculations where you want to round up.
+   * - 3.1 → 4
+   * - -3.7 → -3
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * new Vector3(1.1, -2.3, 3.9).ceil(); // (2, -2, 4)
+   */
+  ceil(): this {
+    this._validateFinite('ceil');
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = Math.ceil(this._components[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Ceils all components and returns a new vector
+   *
+   * @param v - The vector to ceil
+   * @returns New vector with ceiled values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static ceil<T extends Vector>(v: T): T {
+    return v.clone().ceil();
+  }
+
+  /**
+   * Rounds all components to nearest integer (MUTATING)
+   *
+   * Standard rounding: 0.5 rounds up.
+   * - 3.4 → 3
+   * - 3.5 → 4
+   * - -3.5 → -3
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * new Vector3(1.4, 2.5, -3.5).round(); // (1, 3, -3)
+   */
+  round(): this {
+    this._validateFinite('round');
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = Math.round(this._components[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Rounds all components and returns a new vector
+   *
+   * @param v - The vector to round
+   * @returns New vector with rounded values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static round<T extends Vector>(v: T): T {
+    return v.clone().round();
+  }
+
+  /**
+   * Expands all components away from zero (MUTATING)
+   *
+   * Negative values are floored, positive values are ceiled.
+   * Useful when you want to ensure you never underestimate magnitude.
+   * - 3.1 → 4
+   * - -3.1 → -4
+   * - 0 → 0
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * new Vector3(1.1, -2.1, 0).expand(); // (2, -3, 0)
+   */
+  expand(): this {
+    this._validateFinite('expand');
+    for (let i = 0; i < this._components.length; i++) {
+      const c = this._components[i]!;
+      this._components[i] = c >= 0 ? Math.ceil(c) : Math.floor(c);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Expands all components away from zero and returns a new vector
+   *
+   * @param v - The vector to expand
+   * @returns New vector with expanded values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static expand<T extends Vector>(v: T): T {
+    return v.clone().expand();
+  }
+
+  // ============================================================================
+  // Clamping Methods
+  // ============================================================================
+
+  /**
+   * Clamps all components to be non-negative (MUTATING)
+   *
+   * Negative values become 0. Does not round - use with a rounding method.
+   * - 3.5 → 3.5
+   * - -3.5 → 0
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * new Vector3(1.5, -2.5, 3.5).clampNonNegative(); // (1.5, 0, 3.5)
+   */
+  clampNonNegative(): this {
+    this._validateFinite('clampNonNegative');
+    for (let i = 0; i < this._components.length; i++) {
+      this._components[i] = Math.max(0, this._components[i]!);
+    }
+    return this;
+  }
+
+  /**
+   * Static method: Clamps all components to be non-negative and returns a new vector
+   *
+   * @param v - The vector to clamp
+   * @returns New vector with clamped values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static clampNonNegative<T extends Vector>(v: T): T {
+    return v.clone().clampNonNegative();
+  }
+
+  // ============================================================================
+  // Integer Conversion Methods
+  // ============================================================================
+  // Convenience methods for preparing vectors for WebGL integer uniforms.
+
+  /**
+   * Converts this vector to integers for use with int uniforms (ivec) (MUTATING)
+   *
+   * This method validates all values are finite, then truncates to integers.
+   * Use this before passing a Vector to setUniform*i methods.
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * const v = new Vector3(1.7, -2.3, 3.9);
+   * v.toInt(); // (1, -2, 3)
+   * program.setUniform3i('uCoords', v);
+   */
+  toInt(): this {
+    return this.truncate();
+  }
+
+  /**
+   * Static method: Converts a vector to integers and returns a new vector
+   *
+   * @param v - The vector to convert
+   * @returns New vector with integer values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static toInt<T extends Vector>(v: T): T {
+    return v.clone().toInt();
+  }
+
+  /**
+   * Converts this vector to unsigned integers for use with uint uniforms (uvec) (MUTATING)
+   *
+   * This method validates all values are finite, clamps negatives to 0,
+   * then truncates to integers.
+   * Use this before passing a Vector to setUniform*ui methods.
+   *
+   * @returns This vector (for chaining)
+   * @throws Error if any component is NaN or Infinity
+   *
+   * @example
+   * const v = new Vector3(1.7, -2.3, 3.9);
+   * v.toUint(); // (1, 0, 3)
+   * program.setUniform3ui('uCoords', v);
+   */
+  toUint(): this {
+    this._validateFinite('toUint');
+    return this.clampNonNegative().truncate();
+  }
+
+  /**
+   * Static method: Converts a vector to unsigned integers and returns a new vector
+   *
+   * @param v - The vector to convert
+   * @returns New vector with unsigned integer values (same type as v)
+   * @throws Error if any component is NaN or Infinity
+   */
+  static toUint<T extends Vector>(v: T): T {
+    return v.clone().toUint();
+  }
 }
